@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khoun Monk - เว็บไซต์นั่งสมาธิออนไลน์และฝึกหายใจ</title>
+  <meta name="description" content="ผ่อนคลายจิตใจด้วยเสียงธรรมชาติตามสั่ง เครื่องมือนำทางลมหายใจ และตัวตั้งเวลานั่งสมาธิระบบเสียงบำบัด">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="theme-midnight">
+  
+  <!-- Canvas for interactive background effects -->
+  <canvas id="bg-canvas"></canvas>
+  
+  <!-- Audio Interaction Overlay (Browser compliance) -->
+  <div id="start-overlay" class="overlay">
+    <div class="overlay-content">
+      <div class="meditation-icon">
+        <svg viewBox="0 0 100 100" width="80" height="80">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6, 6" />
+          <path d="M50,20 C50,20 65,38 65,55 C65,68 58,75 50,75 C42,75 35,68 35,55 C35,38 50,20 50,20 Z" fill="currentColor" opacity="0.8" />
+        </svg>
+      </div>
+      <h1 class="app-title">Khoun Monk</h1>
+      <p class="app-subtitle">เริ่มต้นการเดินทางสู่ความสงบและสมาธิภายในตัวคุณ</p>
+      <button id="btn-start-journey" class="btn btn-primary btn-large">
+        <span>เริ่มต้นการทำสมาธิ</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Application Container -->
+  <div id="app-container" class="app-hidden">
+    <header class="app-header">
+      <div class="logo">
+        <svg viewBox="0 0 100 100" width="36" height="36" class="logo-svg">
+          <path d="M50,20 C50,20 65,38 65,55 C65,68 58,75 50,75 C42,75 35,68 35,55 C35,38 50,20 50,20 Z" fill="currentColor" />
+        </svg>
+        <span>Khoun Monk</span>
+      </div>
+
+      <!-- Theme Switcher -->
+      <div class="theme-panel">
+        <span class="theme-label">เลือกธีม:</span>
+        <div class="theme-options">
+          <button id="theme-btn-midnight" class="theme-btn active" data-theme="midnight" title="Midnight Stars">
+            <span class="dot midnight"></span>
+          </button>
+          <button id="theme-btn-forest" class="theme-btn" data-theme="forest" title="Forest Mist">
+            <span class="dot forest"></span>
+          </button>
+          <button id="theme-btn-sunset" class="theme-btn" data-theme="sunset" title="Sunset Warmth">
+            <span class="dot sunset"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-grid">
+      <!-- Left Section: Breathing Guide & Quote -->
+      <section class="section-left glass-card">
+        <div class="card-header">
+          <h2>ฝึกควบคุมลมหายใจ (Breathing Guide)</h2>
+          <div class="breathing-select-container">
+            <select id="breathing-pattern-select" class="select-custom">
+              <option value="box">Box Breathing (กล่อง 4-4-4-4)</option>
+              <option value="relax">Relaxing (ผ่อนคลาย 4-7-8)</option>
+              <option value="coherent">Coherent (สมดุล 5-5)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="breathing-visualizer-container">
+          <div id="breathing-ring-outer" class="breathing-ring-outer"></div>
+          <div id="breathing-bubble" class="breathing-bubble">
+            <span id="breathing-status" class="breathing-status">หายใจเข้า</span>
+            <span id="breathing-timer" class="breathing-timer">4</span>
+          </div>
+        </div>
+
+        <div class="breathing-info">
+          <p id="pattern-desc">ฝึกสมาธิด้วยเทคนิคเพิ่มความสงบแบบเร่งด่วน เหมาะสำหรับการลดความเครียด</p>
+        </div>
+      </section>
+
+      <!-- Center/Right Section: Meditation Timer -->
+      <section class="section-right glass-card">
+        <div class="card-header">
+          <h2>ตัวตั้งเวลาสมาธิ (Meditation Timer)</h2>
+        </div>
+
+        <div class="timer-visualizer-container">
+          <svg class="progress-ring" width="220" height="220">
+            <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="95" cx="110" cy="110" />
+            <circle id="timer-progress-bar" class="progress-ring-circle" stroke="var(--accent-color)" stroke-width="8" fill="transparent" r="95" cx="110" cy="110" />
+          </svg>
+          <div class="timer-text-container">
+            <span id="timer-display">10:00</span>
+            <span id="timer-label">พร้อมเริ่ม</span>
+          </div>
+        </div>
+
+        <div class="guide-audio-selection-wrapper" style="margin-bottom: 24px; padding: 0 16px;">
+          <label for="guide-audio-select" class="sound-sub" style="display: block; margin-bottom: 8px; text-align: center; font-weight: 400;">เสียงนำนั่งสมาธิ (Guided Audio):</label>
+          <select id="guide-audio-select" class="select-custom" style="width: 100%;">
+            <option value="none">ไม่มี (เสียงดนตรีบรรเลงธรรมชาติเท่านั้น)</option>
+            <option value="H8dzsli7MW4">หลวงพ่อธัมมชโย - เสียงนำสมาธิ (ชุด 20 นาที)</option>
+            <option value="Hg0EOsUC0J8">หลวงพ่อธัมมชโย - เสียงนำสมาธิ (ชุด 60 นาที)</option>
+          </select>
+        </div>
+
+        <div class="timer-presets">
+          <button id="preset-btn-10" class="preset-btn active" data-time="600">10 นาที</button>
+          <button id="preset-btn-20" class="preset-btn" data-time="1200">20 นาที</button>
+          <button id="preset-btn-30" class="preset-btn" data-time="1800">30 นาที</button>
+          <button id="preset-btn-40" class="preset-btn" data-time="2400">40 นาที</button>
+          <button id="preset-btn-60" class="preset-btn" data-time="3600">60 นาที</button>
+          <button id="preset-btn-custom" class="preset-btn" data-time="custom">กำหนดเอง</button>
+        </div>
+
+        <!-- Custom Time Input Modal/Container (Hidden by default) -->
+        <div id="custom-time-container" class="custom-time-container hidden">
+          <input type="number" id="custom-time-input" min="1" max="180" value="10" class="input-custom">
+          <span>นาที</span>
+          <button id="custom-time-set-btn" class="btn btn-secondary btn-small">ยืนยัน</button>
+        </div>
+
+        <div class="timer-controls">
+          <button id="btn-timer-toggle" class="btn btn-primary btn-icon" title="Start/Pause">
+            <svg id="play-icon" viewBox="0 0 24 24" width="24" height="24">
+              <path d="M8 5v14l11-7z" fill="currentColor"/>
+            </svg>
+            <svg id="pause-icon" class="hidden" viewBox="0 0 24 24" width="24" height="24">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor"/>
+            </svg>
+            <span id="btn-timer-text">เริ่มทำสมาธิ</span>
+          </button>
+          
+          <button id="btn-timer-reset" class="btn btn-secondary btn-icon" title="Reset">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="currentColor"/>
+            </svg>
+            <span>รีเซ็ต</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Bottom Full Width Section: Ambient Sound Mixer -->
+      <section class="section-bottom glass-card">
+        <div class="card-header">
+          <h2>เครื่องผสมเสียงบรรยากาศสงบ (Ambient Sound Mixer)</h2>
+          <button id="btn-mute-all" class="btn btn-secondary btn-small" title="Mute All">
+            <span>ปิดเสียงทั้งหมด</span>
+          </button>
+        </div>
+        
+        <div class="mixer-controls-grid">
+          <!-- Binaural Beats -->
+          <div class="sound-slider-card">
+            <div class="sound-info">
+              <span class="sound-icon">🧘</span>
+              <div class="sound-meta">
+                <span class="sound-name">Binaural Beats</span>
+                <span class="sound-sub">คลื่นสมองช่วยการฝึกสมาธิ (Theta Waves)</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slider-binaural" class="slider-custom" min="0" max="100" value="20">
+              <span id="val-binaural" class="slider-val">20%</span>
+            </div>
+          </div>
+
+          <!-- Rain Noise -->
+          <div class="sound-slider-card">
+            <div class="sound-info">
+              <span class="sound-icon">🌧️</span>
+              <div class="sound-meta">
+                <span class="sound-name">Rain Shower</span>
+                <span class="sound-sub">เสียงฝนโปรยปรายช่วยให้จิตใจสงบ</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slider-rain" class="slider-custom" min="0" max="100" value="0">
+              <span id="val-rain" class="slider-val">0%</span>
+            </div>
+          </div>
+
+          <!-- Ocean Waves -->
+          <div class="sound-slider-card">
+            <div class="sound-info">
+              <span class="sound-icon">🌊</span>
+              <div class="sound-meta">
+                <span class="sound-name">Ocean Waves</span>
+                <span class="sound-sub">เสียงคลื่นซัดหาดทรายผ่อนคลายความเครียด</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slider-ocean" class="slider-custom" min="0" max="100" value="0">
+              <span id="val-ocean" class="slider-val">0%</span>
+            </div>
+          </div>
+
+          <!-- Forest Wind -->
+          <div class="sound-slider-card">
+            <div class="sound-info">
+              <span class="sound-icon">🍃</span>
+              <div class="sound-meta">
+                <span class="sound-name">Forest Wind</span>
+                <span class="sound-sub">เสียงสายลมพัดผ่านแมกไม้ในป่าทึบ</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slider-wind" class="slider-custom" min="0" max="100" value="0">
+              <span id="val-wind" class="slider-val">0%</span>
+            </div>
+          </div>
+
+          <!-- YouTube Guided Audio Volume -->
+          <div id="sound-card-guide" class="sound-slider-card hidden">
+            <div class="sound-info">
+              <span class="sound-icon">🎙️</span>
+              <div class="sound-meta">
+                <span class="sound-name">Meditation Guide</span>
+                <span class="sound-sub">ระดับเสียงนำสมาธิหลวงพ่อ</span>
+              </div>
+            </div>
+            <div class="slider-wrapper">
+              <input type="range" id="slider-guide" class="slider-custom" min="0" max="100" value="85">
+              <span id="val-guide" class="slider-val">85%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bell-tester-row">
+          <span class="sound-sub">ทดสอบเสียงระฆังร้อง (Singing Bowl Chime):</span>
+          <button id="btn-bowl-test" class="btn btn-secondary btn-small btn-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" style="margin-right: 6px;">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" fill="currentColor"/>
+            </svg>
+            <span>เคาะระฆังทำสมาธิ</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div id="quote-container" class="quote-container">
+        <p id="quote-text" class="quote-text">"การมีสติอยู่กับลมหายใจ คือกุญแจสำคัญสู่ความสงบที่แท้จริง"</p>
+        <span id="quote-author" class="quote-author">— ท่าน ติช นัท ฮันห์</span>
+      </div>
+      <p class="copyright">&copy; 2026 Khoun Monk. ทุกอย่างถูกสร้างแบบเรียลไทม์เพื่อสติและความสงบของคุณ.</p>
+    </footer>
+  </div>
+
+  <!-- Tiny YouTube Iframe Player (Required for API and playback) -->
+  <div id="yt-player-wrapper" style="position: fixed; bottom: 20px; right: 20px; width: 140px; height: 80px; z-index: 100; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); background: rgba(0,0,0,0.85); transition: opacity var(--transition-normal), transform var(--transition-normal); opacity: 0; pointer-events: none; display: flex; flex-direction: column;">
+    <div style="font-size: 8px; color: var(--text-secondary); padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; font-weight: 300; user-select: none;">
+      <span>YouTube Stream</span>
+      <span style="width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 6px #ef4444; animation: flash 1s infinite alternate;"></span>
+    </div>
+    <div style="flex-grow: 1; position: relative;">
+      <div id="yt-player" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
