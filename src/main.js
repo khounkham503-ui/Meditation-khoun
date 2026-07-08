@@ -816,14 +816,31 @@ function loadStatsFromLocalStorage() {
   const data = localStorage.getItem('khoun_monk_stats');
   if (data) {
     try {
-      dbStats = JSON.parse(data);
-      if (!dbStats.unlockedBadges) dbStats.unlockedBadges = [];
-      if (!dbStats.journal) dbStats.journal = [];
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        dbStats = parsed;
+      }
     } catch (e) {
       console.error('Failed to parse local storage stats, resetting', e);
     }
   }
+  
+  // Ensure dbStats is always fully initialized safely to prevent script crashes
+  if (!dbStats || typeof dbStats !== 'object') {
+    dbStats = {
+      totalMinutes: 0,
+      sessions: 0,
+      streak: 0,
+      lastDate: null,
+      lastPraise: null,
+      unlockedBadges: [],
+      journal: []
+    };
+  }
+  if (!dbStats.unlockedBadges) dbStats.unlockedBadges = [];
+  if (!dbStats.journal) dbStats.journal = [];
 }
+
 
 function saveStatsToLocalStorage() {
   localStorage.setItem('khoun_monk_stats', JSON.stringify(dbStats));
