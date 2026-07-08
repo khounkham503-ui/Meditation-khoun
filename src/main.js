@@ -41,19 +41,25 @@ let sliders, muteBtn, bowlTestBtn;
 let quoteText, quoteAuthor, quoteContainer;
 let guideSelect, ytPlayerWrapper, sliderGuide, soundCardGuide, valGuide;
 
-// Stats & Journal Elements Cache
-let btnOpenStats, btnCloseStats, statsModal;
-let statTotalMinutes, statSessions, statStreak;
-let journalModal, btnSaveJournal, journalNoteInput;
-let moodButtons, journalHistoryList;
+// Quick Modal elements
+let journalModal, btnSaveJournal, journalNoteInput, moodButtons;
+let selectedMood = null;
+
+// Dashboard tab-view elements
+let navBtnMeditate, navBtnStats;
+let viewMeditate, viewStats;
+let dbStatTotalMinutes, dbStatSessions, dbStatStreak;
+let dbJournalHistoryList, dbJournalNote, btnSaveDbJournal, dbMoodBtns;
+let praiseMessage;
+let dbSelectedMood = null;
 
 // Stats & Journal State
-let selectedMood = null;
 let dbStats = {
   totalMinutes: 0,
   sessions: 0,
   streak: 0,
   lastDate: null,
+  lastPraise: null,
   unlockedBadges: [],
   journal: []
 };
@@ -115,20 +121,27 @@ function cacheDOMElements() {
   timerProgress.style.strokeDasharray = `${CIRCUMFERENCE} ${CIRCUMFERENCE}`;
   updateTimerDisplay();
 
-  // Cache stats & journal elements
-  btnOpenStats = document.getElementById('btn-open-stats');
-  btnCloseStats = document.getElementById('btn-close-stats');
-  statsModal = document.getElementById('stats-modal');
-
-  statTotalMinutes = document.getElementById('stat-total-minutes');
-  statSessions = document.getElementById('stat-sessions');
-  statStreak = document.getElementById('stat-streak');
-
+  // Quick Modal caching
   journalModal = document.getElementById('journal-modal');
   btnSaveJournal = document.getElementById('btn-save-journal');
   journalNoteInput = document.getElementById('journal-note-input');
   moodButtons = document.querySelectorAll('.mood-btn');
-  journalHistoryList = document.getElementById('journal-history-list');
+
+  // Navigation caching
+  navBtnMeditate = document.getElementById('nav-btn-meditate');
+  navBtnStats = document.getElementById('nav-btn-stats');
+  viewMeditate = document.getElementById('view-meditate');
+  viewStats = document.getElementById('view-stats');
+
+  // Dashboard caching
+  dbStatTotalMinutes = document.getElementById('db-stat-total-minutes');
+  dbStatSessions = document.getElementById('db-stat-sessions');
+  dbStatStreak = document.getElementById('db-stat-streak');
+  dbJournalHistoryList = document.getElementById('db-journal-history-list');
+  dbJournalNote = document.getElementById('db-journal-note');
+  btnSaveDbJournal = document.getElementById('btn-save-db-journal');
+  dbMoodBtns = document.querySelectorAll('.mood-btn-db');
+  praiseMessage = document.getElementById('praise-message');
 
   // Load stats from LocalStorage
   loadStatsFromLocalStorage();
@@ -297,24 +310,36 @@ function setupEventListeners() {
     audioManager.setYTVolume(val);
   });
 
-  // Stats Modal Show/Hide
-  btnOpenStats.addEventListener('click', () => {
-    renderStatsModal();
-    statsModal.classList.remove('hidden');
+  // Navigation Menu SPA Tab Switching
+  const navBtns = document.querySelectorAll('.nav-btn');
+  const tabViews = document.querySelectorAll('.tab-view');
+
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTab = btn.getAttribute('data-tab');
+      
+      // Update nav button active states
+      navBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Switch view containers
+      tabViews.forEach(view => {
+         if (view.id === `view-${targetTab}`) {
+           view.classList.remove('hidden');
+         } else {
+           view.classList.add('hidden');
+         }
+      });
+      
+      // Render stats dashboard when tab is shown
+      if (targetTab === 'stats') {
+        renderStatsDashboard();
+        displayRandomPraise();
+      }
+    });
   });
 
-  btnCloseStats.addEventListener('click', () => {
-    statsModal.classList.add('hidden');
-  });
-
-  // Close Stats modal when clicking outside
-  window.addEventListener('click', (e) => {
-    if (e.target === statsModal) {
-      statsModal.classList.add('hidden');
-    }
-  });
-
-  // Mood selection in Journal Modal
+  // Mood selection in Quick Journal Modal
   moodButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       moodButtons.forEach(b => b.classList.remove('active'));
@@ -323,9 +348,23 @@ function setupEventListeners() {
     });
   });
 
-  // Save Mood Journal Entry
+  // Save Mood Journal Entry from Quick Modal
   btnSaveJournal.addEventListener('click', () => {
     saveSessionJournal();
+  });
+
+  // Mood selection in Dashboard stats page
+  dbMoodBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      dbMoodBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      dbSelectedMood = btn.getAttribute('data-mood');
+    });
+  });
+
+  // Save Dhamma Journal Entry from Dashboard page
+  btnSaveDbJournal.addEventListener('click', () => {
+    saveDbFreeFormJournal();
   });
 }
 
@@ -538,6 +577,35 @@ function timerComplete() {
 // NEW UPGRADE LOGIC: STATS, BADGES, AND JOURNALING HELPERS
 // ==========================================================================
 
+const dhammaPraises = [
+  "ขออนุโมทนาในความตั้งใจจริง วันนี้จิตใจเริ่มก้าวเข้าสู่ความสงบอย่างงดงามแล้วนะครับ",
+  "ความดีเป็นของจริง ความนิ่งคือที่สุดแห่งสุข ขออนุโมทนาในความเพียรจดจ่อลมหายใจ",
+  "ยอดเยี่ยมมาก! การสะสมชั่วโมงหยุดนิ่งทีละเล็กทีละน้อย จะนำไปสู่ความสว่างไสวที่ยิ่งใหญ่",
+  "จิตที่หยุดนิ่งได้ดีแล้ว คือหนทางลัดในการยกระดับคุณภาพใจให้เบาสบายผ่องใสเสมอ",
+  "ขออนุโมทนาบุญกับสมาธิในครั้งนี้ ความเพียรต่อเนื่องของคุณช่างงดงามและน่าชื่นชมยิ่งนัก",
+  "ใจหยุดคือที่สุดแห่งความสุข ขอให้ทำใจนิ่งใสๆ ในกลางตัวอย่างสม่ำเสมอนะครับ",
+  "ความพยายามนั่งสมาธิในวันนี้เป็นการฝึกฝนที่ยอดเยี่ยมมาก จิตใจผ่องใสประกายบุญสว่างไสว",
+  "สลัดเรื่องฟุ้งซ่านแล้วกลับมาอยู่กับใจตนเองได้ ยอดเยี่ยมมาก! ขออนุโมทนาด้วยใจจริงครับ"
+];
+
+function getRandomPraise() {
+  return dhammaPraises[Math.floor(Math.random() * dhammaPraises.length)];
+}
+
+function displayRandomPraise(forcePraise = null) {
+  if (praiseMessage) {
+    if (forcePraise) {
+      praiseMessage.textContent = `"${forcePraise}"`;
+    } else if (dbStats.lastPraise) {
+      praiseMessage.textContent = `"${dbStats.lastPraise}"`;
+    } else {
+      const rand = getRandomPraise();
+      dbStats.lastPraise = rand;
+      praiseMessage.textContent = `"${rand}"`;
+    }
+  }
+}
+
 function openMoodJournal() {
   selectedMood = null;
   moodButtons.forEach(b => b.classList.remove('active'));
@@ -570,6 +638,10 @@ function saveSessionJournal() {
   };
   dbStats.journal.unshift(newEntry); // newest first
   
+  // Generate random praise
+  const praise = getRandomPraise();
+  dbStats.lastPraise = praise;
+  
   // Check Badges
   checkBadges(sessionMinutes, now);
   
@@ -585,9 +657,49 @@ function saveSessionJournal() {
   breathingBubble.classList.remove('btn-primary');
   resetTimer();
   
-  // Open Stats modal to show progress and awards
-  renderStatsModal();
-  statsModal.classList.remove('hidden');
+  // Redirect to Stats Tab SPA smoothly
+  navBtnMeditate.classList.remove('active');
+  navBtnStats.classList.add('active');
+  viewMeditate.classList.add('hidden');
+  viewStats.classList.remove('hidden');
+  
+  // Render new dashboard
+  renderStatsDashboard();
+  displayRandomPraise(praise);
+}
+
+function saveDbFreeFormJournal() {
+  const noteText = dbJournalNote.value.trim();
+  if (!noteText) {
+    alert('กรุณาพิมพ์บันทึกผลการปฏิบัติธรรมก่อนกดบันทึกนะครับ 😊');
+    return;
+  }
+  
+  const now = new Date();
+  
+  const newEntry = {
+    date: now.toISOString(),
+    minutes: 0, // 0 mins represents freeform entry
+    mood: dbSelectedMood || 'calm',
+    note: noteText
+  };
+  
+  dbStats.journal.unshift(newEntry);
+  
+  // Custom praise for writing Dhamma logs
+  const praise = "ขออนุโมทนาในการจดบันทึกธรรมทาน สติจดจ่อกุศลย่อมสร้างความสว่างไสวให้หนทางเดินจิตใจครับ";
+  dbStats.lastPraise = praise;
+  
+  saveStatsToLocalStorage();
+  
+  // Reset dashboard inputs
+  dbJournalNote.value = '';
+  dbMoodBtns.forEach(b => b.classList.remove('active'));
+  dbSelectedMood = null;
+  
+  // Re-render
+  renderStatsDashboard();
+  displayRandomPraise(praise);
 }
 
 function calculateStreak(nowDate) {
@@ -609,7 +721,7 @@ function calculateStreak(nowDate) {
   } else if (diffDays > 1) {
     dbStats.streak = 1;
   }
-  // If diffDays === 0, same-day meditation, streak remains unchanged
+  // If diffDays === 0, same day, streak unchanged
   
   dbStats.lastDate = nowDate.toISOString();
 }
@@ -644,15 +756,16 @@ function checkBadges(sessionMinutes, nowDate) {
   }
 }
 
-function renderStatsModal() {
-  statTotalMinutes.textContent = dbStats.totalMinutes;
-  statSessions.textContent = dbStats.sessions;
-  statStreak.textContent = `🔥 ${dbStats.streak}`;
+function renderStatsDashboard() {
+  // Update dashboard stats fields
+  if (dbStatTotalMinutes) dbStatTotalMinutes.textContent = dbStats.totalMinutes;
+  if (dbStatSessions) dbStatSessions.textContent = dbStats.sessions;
+  if (dbStatStreak) dbStatStreak.textContent = `🔥 ${dbStats.streak}`;
   
-  // Render Badges
+  // Render badges on Dashboard
   const badgeIds = ['beginner', 'streak3', 'morning', 'master30', 'peacemaster'];
   badgeIds.forEach(id => {
-    const el = document.getElementById(`badge-${id}`);
+    const el = document.getElementById(`db-badge-${id}`);
     if (el) {
       if (dbStats.unlockedBadges.includes(id)) {
         el.classList.remove('locked');
@@ -664,34 +777,38 @@ function renderStatsModal() {
     }
   });
   
-  // Render Journal History
-  journalHistoryList.innerHTML = '';
-  if (dbStats.journal.length === 0) {
-    journalHistoryList.innerHTML = '<p class="empty-journal-message">ยังไม่มีประวัติการบันทึก ทำสมาธิเสร็จสิ้นเพื่อเริ่มบันทึกบันทึกสติ</p>';
-  } else {
-    dbStats.journal.forEach(entry => {
-      const item = document.createElement('div');
-      item.className = 'journal-item';
-      
-      const dateObj = new Date(entry.date);
-      const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth() + 1}/${dateObj.getFullYear() + 543} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
-      
-      let moodEmoji = '😌';
-      let moodLabel = 'สงบ';
-      if (entry.mood === 'peaceful') { moodEmoji = '😇'; moodLabel = 'ผ่องใส'; }
-      else if (entry.mood === 'refreshed') { moodEmoji = '🍃'; moodLabel = 'สดชื่น'; }
-      else if (entry.mood === 'sleepy') { moodEmoji = '🥱'; moodLabel = 'ง่วงนอน'; }
-      else if (entry.mood === 'restless') { moodEmoji = '😟'; moodLabel = 'ฟุ้งซ่าน'; }
-      
-      item.innerHTML = `
-        <div class="journal-item-header">
-          <span class="journal-item-mood">${moodEmoji} ${moodLabel} (${entry.minutes} นาที)</span>
-          <span>${formattedDate} น.</span>
-        </div>
-        ${entry.note ? `<p class="journal-item-note">"${entry.note}"</p>` : ''}
-      `;
-      journalHistoryList.appendChild(item);
-    });
+  // Render Journal History on Dashboard
+  if (dbJournalHistoryList) {
+    dbJournalHistoryList.innerHTML = '';
+    if (dbStats.journal.length === 0) {
+      dbJournalHistoryList.innerHTML = '<p class="empty-journal-message">ยังไม่มีประวัติบันทึกความดี เขียนบันทึกเพื่อจดสภาวะธรรมก้าวแรกของคุณได้ทางซ้ายมือ</p>';
+    } else {
+      dbStats.journal.forEach(entry => {
+        const item = document.createElement('div');
+        item.className = 'journal-item';
+        
+        const dateObj = new Date(entry.date);
+        const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth() + 1}/${dateObj.getFullYear() + 543} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+        
+        let moodEmoji = '😌';
+        let moodLabel = 'สงบ';
+        if (entry.mood === 'peaceful') { moodEmoji = '😇'; moodLabel = 'ผ่องใส'; }
+        else if (entry.mood === 'refreshed') { moodEmoji = '🍃'; moodLabel = 'สดชื่น'; }
+        else if (entry.mood === 'sleepy') { moodEmoji = '🥱'; moodLabel = 'ง่วงนอน'; }
+        else if (entry.mood === 'restless') { moodEmoji = '😟'; moodLabel = 'ฟุ้งซ่าน'; }
+        
+        const typeLabel = entry.minutes > 0 ? `ทำสมาธิ ${entry.minutes} นาที` : 'บันทึกปฏิบัติธรรม';
+        
+        item.innerHTML = `
+          <div class="journal-item-header">
+            <span class="journal-item-mood">${moodEmoji} ${moodLabel} (${typeLabel})</span>
+            <span>${formattedDate} น.</span>
+          </div>
+          ${entry.note ? `<p class="journal-item-note">"${entry.note}"</p>` : ''}
+        `;
+        dbJournalHistoryList.appendChild(item);
+      });
+    }
   }
 }
 

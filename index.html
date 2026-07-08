@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -39,7 +39,7 @@
   <!-- Main Application Container -->
   <div id="app-container" class="app-hidden">
     <header class="app-header">
-      <div class="logo-container" style="display: flex; align-items: center; gap: 12px;">
+      <div class="logo-container" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
         <div class="logo">
           <svg viewBox="0 0 100 100" width="36" height="36" class="logo-svg">
             <path d="M50,20 C50,20 65,38 65,55 C65,68 58,75 50,75 C42,75 35,68 35,55 C35,38 50,20 50,20 Z" fill="currentColor" />
@@ -47,10 +47,15 @@
           <span>Khoun Monk</span>
         </div>
         
-        <!-- Stats Trigger Button -->
-        <button id="btn-open-stats" class="btn btn-secondary btn-small btn-stats-trigger" title="ดูสถิติและเหรียญรางวัล">
-          <span>🏆 สถิติและเหรียญรางวัล</span>
-        </button>
+        <!-- Navigation Menu -->
+        <nav class="app-nav" style="display: flex; gap: 6px;">
+          <button class="nav-btn active" data-tab="meditate" id="nav-btn-meditate">
+            <span>🧘 ทำสมาธิ</span>
+          </button>
+          <button class="nav-btn" data-tab="stats" id="nav-btn-stats">
+            <span>📊 บันทึกธรรม & สถิติ</span>
+          </button>
+        </nav>
       </div>
 
       <!-- Theme Switcher -->
@@ -73,7 +78,9 @@
       </div>
     </header>
 
-    <main class="app-grid">
+    <!-- TAB VIEW 1: MEDITATION PRACTICE -->
+    <div id="view-meditate" class="tab-view active">
+      <main class="app-grid">
       <!-- Left Section: Breathing Guide & Quote -->
       <section class="section-left glass-card">
         <div class="card-header">
@@ -259,79 +266,101 @@
         </div>
       </section>
     </main>
-
-    <footer class="app-footer">
-      <div id="quote-container" class="quote-container">
-        <p id="quote-text" class="quote-text">"การมีสติอยู่กับลมหายใจ คือกุญแจสำคัญสู่ความสงบที่แท้จริง"</p>
-        <span id="quote-author" class="quote-author">— ท่าน ติช นัท ฮันห์</span>
-      </div>
-      <p class="copyright">&copy; 2026 Khoun Monk. ทุกอย่างถูกสร้างแบบเรียลไทม์เพื่อสติและความสงบของคุณ.</p>
-    </footer>
   </div>
 
-  <!-- Tiny YouTube Iframe Player (Required for API and playback) -->
-  <div id="yt-player-wrapper" style="position: fixed; bottom: 20px; right: 20px; width: 140px; height: 80px; z-index: 100; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); background: rgba(0,0,0,0.85); transition: opacity var(--transition-normal), transform var(--transition-normal); opacity: 0; pointer-events: none; display: flex; flex-direction: column;">
+  <!-- TAB VIEW 2: STATS & DHAMMA JOURNAL DASHBOARD -->
+  <div id="view-stats" class="tab-view hidden">
+    <main class="dashboard-grid">
+      
+      <!-- Left Column: Praise & Dhamma Entry Form -->
+      <section class="db-section-left">
+        <!-- 1. Encouraging Praise Card -->
+        <div class="praise-card glass-card">
+          <div class="praise-glow"></div>
+          <div class="praise-badge">✨ อนุโมทนาความเพียร</div>
+          <div class="praise-body">
+            <h3 id="praise-title">คำชมเชยแด่ผู้ตื่น</h3>
+            <p id="praise-message">"ขออนุโมทนาในความเพียรปฏิบัติธรรมในวันนี้ จิตที่ฝึกหยุดนิ่งดีแล้ว ย่อมนำความสุขความสว่างไสวมาสู่จิตใจของคุณเสมอนะครับ"</p>
+          </div>
+        </div>
+
+        <!-- 2. Dhamma Practice Entry Card -->
+        <div class="dhamma-entry-card glass-card">
+          <div class="card-header">
+            <h2>📝 จดบันทึกผลการปฏิบัติธรรม</h2>
+          </div>
+          <div class="card-body">
+            <p class="form-instruction">บันทึกสภาวะจิต สมาธิ แสงสว่าง หรือความรู้สึกสงบระหว่างนั่งเพื่อดูความก้าวหน้า:</p>
+            
+            <div class="mood-selector-container-db">
+              <span class="mood-question">อารมณ์ / สภาวะใจในขณะนี้:</span>
+              <div class="mood-options-db">
+                <button class="mood-btn-db" data-mood="calm" data-emoji="😌" title="สงบใจ">😌</button>
+                <button class="mood-btn-db" data-mood="peaceful" data-emoji="😇" title="จิตผ่องใส">😇</button>
+                <button class="mood-btn-db" data-mood="refreshed" data-emoji="🍃" title="กายเบาสดชื่น">🍃</button>
+                <button class="mood-btn-db" data-mood="sleepy" data-emoji="🥱" title="ง่วงเหงา">🥱</button>
+                <button class="mood-btn-db" data-mood="restless" data-emoji="😟" title="ฟุ้งซ่าน">😟</button>
+              </div>
+            </div>
+
+            <div class="journal-input-container">
+              <label for="db-journal-note" class="journal-label">บันทึกสภาวะธรรม (เช่น ลมหายใจละเอียด, พบแสงสว่าง, กายขยาย หรือจิตสงบนิ่ง):</label>
+              <textarea id="db-journal-note" class="textarea-custom" placeholder="วันนี้สมาธิดีไหม? เกิดอะไรขึ้นบ้างตอนใจหยุดนิ่ง..." rows="4"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button id="btn-save-db-journal" class="btn btn-primary" style="width: 100%;">
+                <span>💾 บันทึกสภาวะธรรม</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Stats overview, Badges & Journal History -->
+      <section class="db-section-right">
+        <!-- 1. Stats Numbers Grid -->
+        <div class="stats-overview-card glass-card">
+          <div class="card-header">
+            <h2>📊 รายงานสถิติการปฏิบัติ</h2>
+          </div>
+          <div class="stats-overview-grid" style="margin-top: 14px;">
+            <div class="stat-box">
+              <span class="stat-value" id="db-stat-total-minutes">0</span>
+              <span class="stat-label">นาทีสะสม</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="db-stat-sessions">0</span>
+              <span class="stat-label">ครั้งที่นั่ง</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="db-stat-streak">🔥 0</span>
+              <span class="stat-label">วันต่อเนื่อง</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Badges List -->
+        <div class="badges-card glass-card">
+          <div class="card-header">
+            <h2>🏅 เหรียญเกียรติยศแห่งสมาธิ</h2>
+          </div>
+          <div class="badges-grid" style="margin-top: 14px;">
+            <div class="badge-item locked" id="db-badge-beginner" data-title="การเริ่มต้นที่งดงาม" data-desc="ทำสมาธิสำเร็จครั้งแรก">
+              <div class="badge-icon">🧘</div>
+              <span class="badge-name">ผู้เริ่มต้น</span>
+            </div>
+            <div class="badge-item locked" id="db-badge-streak3" data-title="ความเพียรเริ่มต้น" data-desc="ทำสมาธิติดต่อกัน 3 วัน">
+              <div class="badge-icon">🔥</div>
+              <span class="badge-name">ความเพียร 3 วัน</span>
+            </div>
+            <div class="badge-item locked" id="db-badge-morning" data-title="แสงอรุณ�ex: 100; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); background: rgba(0,0,0,0.85); transition: opacity var(--transition-normal), transform var(--transition-normal); opacity: 0; pointer-events: none; display: flex; flex-direction: column;">
     <div style="font-size: 8px; color: var(--text-secondary); padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; font-weight: 300; user-select: none;">
       <span>YouTube Stream</span>
       <span style="width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 6px #ef4444; animation: flash 1s infinite alternate;"></span>
     </div>
     <div style="flex-grow: 1; position: relative;">
       <div id="yt-player" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
-    </div>
-  </div>
-
-  <!-- Stats Modal -->
-  <div id="stats-modal" class="modal-overlay hidden">
-    <div class="modal-card stats-card glass-card">
-      <div class="modal-header">
-        <h2>🏆 สถิติและเหรียญรางวัลของคุณ</h2>
-        <button id="btn-close-stats" class="modal-close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="stats-overview-grid">
-          <div class="stat-box">
-            <span class="stat-value" id="stat-total-minutes">0</span>
-            <span class="stat-label">นาทีสะสม</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value" id="stat-sessions">0</span>
-            <span class="stat-label">ครั้งที่นั่ง</span>
-          </div>
-          <div class="stat-box">
-            <span class="stat-value" id="stat-streak">🔥 0</span>
-            <span class="stat-label">วันต่อเนื่อง</span>
-          </div>
-        </div>
-        
-        <h3 class="modal-section-title">🏅 เหรียญรางวัลความสำเร็จ</h3>
-        <div class="badges-grid">
-          <div class="badge-item locked" id="badge-beginner" data-title="การเริ่มต้นที่งดงาม" data-desc="ทำสมาธิสำเร็จครั้งแรก">
-            <div class="badge-icon">🧘</div>
-            <span class="badge-name">ผู้เริ่มต้น</span>
-          </div>
-          <div class="badge-item locked" id="badge-streak3" data-title="ความเพียรเริ่มต้น" data-desc="ทำสมาธิติดต่อกัน 3 วัน">
-            <div class="badge-icon">🔥</div>
-            <span class="badge-name">ความเพียร 3 วัน</span>
-          </div>
-          <div class="badge-item locked" id="badge-morning" data-title="แสงอรุณส่องจิต" data-desc="ทำสมาธิช่วงเช้า (04:00 - 08:00)">
-            <div class="badge-icon">🌅</div>
-            <span class="badge-name">อรุณรุ่ง</span>
-          </div>
-          <div class="badge-item locked" id="badge-master30" data-title="สมาธิแน่วแน่" data-desc="ทำสมาธิต่อเนื่องรอบเดียว 30 นาทีขึ้นไป">
-            <div class="badge-icon">🧘‍♂️</div>
-            <span class="badge-name">ผู้แน่วแน่ 30ม.</span>
-          </div>
-          <div class="badge-item locked" id="badge-peacemaster" data-title="ขุมทรัพย์แห่งความสงบ" data-desc="สะสมเวลาทำสมาธิรวมครบ 100 นาที">
-            <div class="badge-icon">💎</div>
-            <span class="badge-name">ผู้สงบ 100ม.</span>
-          </div>
-        </div>
-
-        <h3 class="modal-section-title">📖 ประวัติบันทึกสติล่าสุด</h3>
-        <div id="journal-history-list" class="journal-history-list">
-          <p class="empty-journal-message">ยังไม่มีประวัติการบันทึก ทำสมาธิเสร็จสิ้นเพื่อเริ่มบันทึกบันทึกสติ</p>
-        </div>
-      </div>
     </div>
   </div>
 
