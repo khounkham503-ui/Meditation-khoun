@@ -354,14 +354,32 @@
               <div class="badge-icon">🔥</div>
               <span class="badge-name">ความเพียร 3 วัน</span>
             </div>
-            <div class="badge-item locked" id="db-badge-morning" data-title="แสงอรุณ�ex: 100; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5); background: rgba(0,0,0,0.85); transition: opacity var(--transition-normal), transform var(--transition-normal); opacity: 0; pointer-events: none; display: flex; flex-direction: column;">
-    <div style="font-size: 8px; color: var(--text-secondary); padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; font-weight: 300; user-select: none;">
-      <span>YouTube Stream</span>
-      <span style="width: 6px; height: 6px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 6px #ef4444; animation: flash 1s infinite alternate;"></span>
-    </div>
-    <div style="flex-grow: 1; position: relative;">
-      <div id="yt-player" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
-    </div>
+            <div class="badge-item locked" id="db-badge-morning" data-title="แสงอรุณส่องจิต" data-desc="ทำสมาธิช่วงเช้า (04:00 - 08:00)">
+              <div class="badge-icon">🌅</div>
+              <span class="badge-name">อรุณรุ่ง</span>
+            </div>
+            <div class="badge-item locked" id="db-badge-master30" data-title="สมาธิแน่วแน่" data-desc="ทำสมาธิต่อเนื่องรอบเดียว 30 นาทีขึ้นไป">
+              <div class="badge-icon">🧘‍♂️</div>
+              <span class="badge-name">ผู้แน่วแน่ 30ม.</span>
+            </div>
+            <div class="badge-item locked" id="db-badge-peacemaster" data-title="ขุมทรัพย์แห่งความสงบ" data-desc="สะสมเวลาทำสมาธิรวมครบ 100 นาที">
+              <div class="badge-icon">💎</div>
+              <span class="badge-name">ผู้สงบ 100ม.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Dhamma Journal History -->
+        <div class="history-card glass-card" style="flex-grow: 1; display: flex; flex-direction: column;">
+          <div class="card-header">
+            <h2>📖 สมุดบันทึกสมาธิย้อนหลัง</h2>
+          </div>
+          <div id="db-journal-history-list" class="journal-history-list" style="margin-top: 14px; max-height: 280px; overflow-y: auto;">
+            <p class="empty-journal-message">ยังไม่มีประวัติบันทึกความดี เขียนบันทึกเพื่อจดสภาวะธรรมก้าวแรกของคุณได้ทางซ้ายมือ</p>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 
   <!-- Mood Journal Modal -->
