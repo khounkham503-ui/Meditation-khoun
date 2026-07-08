@@ -100,6 +100,20 @@ class CanvasBackground {
           wiggleAngle: Math.random() * Math.PI * 2
         });
       }
+    } else if (this.theme === 'candle') {
+      // Small, tiny embers rising from candle wick
+      for (let i = 0; i < 15; i++) {
+        this.particles.push({
+          x: this.width / 2 + (Math.random() - 0.5) * 20,
+          y: this.height * 0.85 - 80 - Math.random() * 180,
+          radius: Math.random() * 1.5 + 0.4,
+          color: '245, 158, 11', // Warm gold
+          speedX: (Math.random() - 0.5) * 0.18,
+          speedY: -0.15 - Math.random() * 0.2,
+          alpha: Math.random() * 0.6 + 0.2,
+          decay: 0.001 + Math.random() * 0.002
+        });
+      }
     }
   }
 
@@ -126,6 +140,14 @@ class CanvasBackground {
       grad.addColorStop(0, '#2e131d');
       grad.addColorStop(0.4, '#150912');
       grad.addColorStop(1, '#080307');
+    } else if (this.theme === 'candle') {
+      grad = this.ctx.createRadialGradient(
+        this.width / 2, this.height * 0.85, 10,
+        this.width / 2, this.height * 0.85, Math.max(this.width, this.height)
+      );
+      grad.addColorStop(0, '#1d0f08'); // Warm orange-brown glow
+      grad.addColorStop(0.5, '#080402'); // Deep amber-black shadow
+      grad.addColorStop(1, '#000000'); // Pure darkness at edges
     }
 
     this.ctx.fillStyle = grad;
@@ -232,6 +254,23 @@ class CanvasBackground {
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         this.ctx.fill();
+      } else if (this.theme === 'candle') {
+        // Sparks logic
+        p.y += p.speedY;
+        p.x += p.speedX;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0 || p.y < this.height * 0.4) {
+          p.alpha = Math.random() * 0.6 + 0.2;
+          p.x = this.width / 2 + (Math.random() - 0.5) * 15;
+          p.y = this.height * 0.85 - 80; // Start at wick
+          p.speedX = (Math.random() - 0.5) * 0.15;
+        }
+
+        this.ctx.fillStyle = `rgba(${p.color}, ${p.alpha})`;
+        this.ctx.beginPath();
+        this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        this.ctx.fill();
       }
     });
 
@@ -251,6 +290,102 @@ class CanvasBackground {
       this.ctx.arc(this.width / 2, this.height * 0.9, 180 * pulse, 0, Math.PI * 2);
       this.ctx.fill();
     }
+
+    // Draw the actual Candle if theme is 'candle'
+    if (this.theme === 'candle') {
+      const centerX = this.width / 2;
+      const candleTopY = this.height * 0.85 - 75; // wick base
+      const candleHeight = 110;
+      const candleWidth = 26;
+
+      // 1. Draw Candle Wax Body (cylinder)
+      const waxGrad = this.ctx.createLinearGradient(centerX - candleWidth/2, 0, centerX + candleWidth/2, 0);
+      waxGrad.addColorStop(0, '#78350f'); // Shadow dark amber
+      waxGrad.addColorStop(0.3, '#d97706'); // Warm wax gold
+      waxGrad.addColorStop(0.7, '#f59e0b'); // Highlit wax
+      waxGrad.addColorStop(1, '#b45309'); // Right side shadow
+
+      this.ctx.fillStyle = waxGrad;
+      this.ctx.beginPath();
+      this.ctx.arc(centerX, candleTopY, candleWidth/2, Math.PI, 0, false);
+      this.ctx.rect(centerX - candleWidth/2, candleTopY, candleWidth, candleHeight);
+      this.ctx.fill();
+
+      // Wax drips
+      this.ctx.fillStyle = '#f59e0b';
+      this.ctx.beginPath();
+      this.ctx.arc(centerX - 4, candleTopY + 12, 3, 0, Math.PI * 2);
+      this.ctx.arc(centerX + 6, candleTopY + 22, 2.5, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // 2. Draw Wick
+      this.ctx.strokeStyle = '#27272a';
+      this.ctx.lineWidth = 2.5;
+      this.ctx.beginPath();
+      this.ctx.moveTo(centerX, candleTopY);
+      this.ctx.quadraticCurveTo(centerX - 2, candleTopY - 8, centerX - 1, candleTopY - 15);
+      this.ctx.stroke();
+
+      // 3. Draw Flickering Flame (layered shapes with bezier curves)
+      const flameWiggleX = Math.sin(time * 0.007) * 1.5 + (Math.random() - 0.5) * 0.8;
+      const flameWiggleY = Math.cos(time * 0.004) * 2 + Math.random() * 0.6;
+      const flameBaseX = centerX - 1;
+      const flameBaseY = candleTopY - 14;
+
+      // Outer glow of the flame (Soft orange aura)
+      const outerGlow = this.ctx.createRadialGradient(flameBaseX, flameBaseY - 20, 0, flameBaseX, flameBaseY - 20, 60 + Math.sin(time * 0.01) * 4);
+      outerGlow.addColorStop(0, 'rgba(245, 158, 11, 0.25)');
+      outerGlow.addColorStop(0.5, 'rgba(217, 119, 6, 0.06)');
+      outerGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      this.ctx.fillStyle = outerGlow;
+      this.ctx.beginPath();
+      this.ctx.arc(flameBaseX, flameBaseY - 20, 70, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Flame Layer 1: Outer Orange Flame
+      this.drawFlameLayer(flameBaseX, flameBaseY, 13 + flameWiggleX * 0.1, 44 + flameWiggleY, flameWiggleX, 'rgba(239, 68, 68, 0.45)');
+
+      // Flame Layer 2: Middle Yellow Flame
+      this.drawFlameLayer(flameBaseX, flameBaseY - 3, 9 + flameWiggleX * 0.2, 34 + flameWiggleY, flameWiggleX * 0.8, '#f59e0b');
+
+      // Flame Layer 3: Inner White Flame
+      this.drawFlameLayer(flameBaseX, flameBaseY - 6, 5, 22 + flameWiggleY * 0.6, flameWiggleX * 0.5, '#fef3c7');
+
+      // Flame Layer 4: Blue Flame Core at the bottom wick
+      const blueGrad = this.ctx.createRadialGradient(flameBaseX, flameBaseY, 1, flameBaseX, flameBaseY, 8);
+      blueGrad.addColorStop(0, 'rgba(37, 99, 235, 0.8)');
+      blueGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.3)');
+      blueGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      this.ctx.fillStyle = blueGrad;
+      this.ctx.beginPath();
+      this.ctx.arc(flameBaseX, flameBaseY, 8, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+  }
+
+  // Helper to draw realistic teardrop-shaped flame layers using bezier curves
+  drawFlameLayer(bx, by, w, h, wiggle, color) {
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    
+    // Start at bottom center
+    this.ctx.moveTo(bx, by);
+    
+    // Left curve to tip
+    this.ctx.bezierCurveTo(
+      bx - w, by - h * 0.2,
+      bx - w * 0.8 + wiggle, by - h * 0.8,
+      bx + wiggle, by - h
+    );
+    
+    // Right curve back to base
+    this.ctx.bezierCurveTo(
+      bx + w * 0.8 + wiggle, by - h * 0.8,
+      bx + w, by - h * 0.2,
+      bx, by
+    );
+    
+    this.ctx.fill();
   }
 
   // Cleanup

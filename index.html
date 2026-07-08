@@ -39,11 +39,18 @@
   <!-- Main Application Container -->
   <div id="app-container" class="app-hidden">
     <header class="app-header">
-      <div class="logo">
-        <svg viewBox="0 0 100 100" width="36" height="36" class="logo-svg">
-          <path d="M50,20 C50,20 65,38 65,55 C65,68 58,75 50,75 C42,75 35,68 35,55 C35,38 50,20 50,20 Z" fill="currentColor" />
-        </svg>
-        <span>Khoun Monk</span>
+      <div class="logo-container" style="display: flex; align-items: center; gap: 12px;">
+        <div class="logo">
+          <svg viewBox="0 0 100 100" width="36" height="36" class="logo-svg">
+            <path d="M50,20 C50,20 65,38 65,55 C65,68 58,75 50,75 C42,75 35,68 35,55 C35,38 50,20 50,20 Z" fill="currentColor" />
+          </svg>
+          <span>Khoun Monk</span>
+        </div>
+        
+        <!-- Stats Trigger Button -->
+        <button id="btn-open-stats" class="btn btn-secondary btn-small btn-stats-trigger" title="ดูสถิติและเหรียญรางวัล">
+          <span>🏆 สถิติและเหรียญรางวัล</span>
+        </button>
       </div>
 
       <!-- Theme Switcher -->
@@ -58,6 +65,9 @@
           </button>
           <button id="theme-btn-sunset" class="theme-btn" data-theme="sunset" title="Sunset Warmth">
             <span class="dot sunset"></span>
+          </button>
+          <button id="theme-btn-candle" class="theme-btn" data-theme="candle" title="Zen Candle">
+            <span class="dot candle"></span>
           </button>
         </div>
       </div>
@@ -267,6 +277,110 @@
     </div>
     <div style="flex-grow: 1; position: relative;">
       <div id="yt-player" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
+    </div>
+  </div>
+
+  <!-- Stats Modal -->
+  <div id="stats-modal" class="modal-overlay hidden">
+    <div class="modal-card stats-card glass-card">
+      <div class="modal-header">
+        <h2>🏆 สถิติและเหรียญรางวัลของคุณ</h2>
+        <button id="btn-close-stats" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="stats-overview-grid">
+          <div class="stat-box">
+            <span class="stat-value" id="stat-total-minutes">0</span>
+            <span class="stat-label">นาทีสะสม</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="stat-sessions">0</span>
+            <span class="stat-label">ครั้งที่นั่ง</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="stat-streak">🔥 0</span>
+            <span class="stat-label">วันต่อเนื่อง</span>
+          </div>
+        </div>
+        
+        <h3 class="modal-section-title">🏅 เหรียญรางวัลความสำเร็จ</h3>
+        <div class="badges-grid">
+          <div class="badge-item locked" id="badge-beginner" data-title="การเริ่มต้นที่งดงาม" data-desc="ทำสมาธิสำเร็จครั้งแรก">
+            <div class="badge-icon">🧘</div>
+            <span class="badge-name">ผู้เริ่มต้น</span>
+          </div>
+          <div class="badge-item locked" id="badge-streak3" data-title="ความเพียรเริ่มต้น" data-desc="ทำสมาธิติดต่อกัน 3 วัน">
+            <div class="badge-icon">🔥</div>
+            <span class="badge-name">ความเพียร 3 วัน</span>
+          </div>
+          <div class="badge-item locked" id="badge-morning" data-title="แสงอรุณส่องจิต" data-desc="ทำสมาธิช่วงเช้า (04:00 - 08:00)">
+            <div class="badge-icon">🌅</div>
+            <span class="badge-name">อรุณรุ่ง</span>
+          </div>
+          <div class="badge-item locked" id="badge-master30" data-title="สมาธิแน่วแน่" data-desc="ทำสมาธิต่อเนื่องรอบเดียว 30 นาทีขึ้นไป">
+            <div class="badge-icon">🧘‍♂️</div>
+            <span class="badge-name">ผู้แน่วแน่ 30ม.</span>
+          </div>
+          <div class="badge-item locked" id="badge-peacemaster" data-title="ขุมทรัพย์แห่งความสงบ" data-desc="สะสมเวลาทำสมาธิรวมครบ 100 นาที">
+            <div class="badge-icon">💎</div>
+            <span class="badge-name">ผู้สงบ 100ม.</span>
+          </div>
+        </div>
+
+        <h3 class="modal-section-title">📖 ประวัติบันทึกสติล่าสุด</h3>
+        <div id="journal-history-list" class="journal-history-list">
+          <p class="empty-journal-message">ยังไม่มีประวัติการบันทึก ทำสมาธิเสร็จสิ้นเพื่อเริ่มบันทึกบันทึกสติ</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mood Journal Modal -->
+  <div id="journal-modal" class="modal-overlay hidden">
+    <div class="modal-card journal-card glass-card">
+      <div class="modal-header">
+        <h2>🧘 ทำสมาธิเสร็จสิ้น!</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction">ขออนุโมทนาบุญกับความเพียรในวันนี้ ขอให้บันทึกสติและความรู้สึกของคุณในปัจจุบันขณะ:</p>
+        
+        <div class="mood-selector-container">
+          <span class="mood-question">ตอนนี้จิตใจของคุณรู้สึกอย่างไรบ้าง?</span>
+          <div class="mood-options">
+            <button class="mood-btn" data-mood="calm" data-emoji="😌">
+              <span class="emoji">😌</span>
+              <span class="label">สงบ</span>
+            </button>
+            <button class="mood-btn" data-mood="peaceful" data-emoji="😇">
+              <span class="emoji">😇</span>
+              <span class="label">ผ่องใส</span>
+            </button>
+            <button class="mood-btn" data-mood="refreshed" data-emoji="🍃">
+              <span class="emoji">🍃</span>
+              <span class="label">สดชื่น</span>
+            </button>
+            <button class="mood-btn" data-mood="sleepy" data-emoji="🥱">
+              <span class="emoji">🥱</span>
+              <span class="label">ง่วงนอน</span>
+            </button>
+            <button class="mood-btn" data-mood="restless" data-emoji="😟">
+              <span class="emoji">😟</span>
+              <span class="label">ฟุ้งซ่าน</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="journal-input-container">
+          <label for="journal-note-input" class="journal-label">เขียนบันทึกความก้าวหน้าสั้นๆ (ไม่บังคับ):</label>
+          <textarea id="journal-note-input" class="textarea-custom" placeholder="วันนี้สมาธิเป็นอย่างไรบ้าง? พิมพ์ความรู้สึกเพื่อบันทึกเก็บไว้ดูพัฒนาการ..." rows="3"></textarea>
+        </div>
+        
+        <div class="modal-footer">
+          <button id="btn-save-journal" class="btn btn-primary" style="width: 100%;">
+            <span>บันทึกความเพียรและเสร็จสิ้น</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

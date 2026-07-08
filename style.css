@@ -767,3 +767,385 @@ body {
     font-size: 2.6rem;
   }
 }
+
+/* ==========================================================================
+   NEW UPGRADE FEATURES: CANDLE THEME, MODALS, STATS & JOURNAL
+   ========================================================================== */
+
+/* Candle Theme Styles */
+body.theme-candle {
+  --bg-gradient: radial-gradient(circle at center bottom, #1d0f08 0%, #080402 70%, #000000 100%);
+  --accent-color: #f59e0b; /* Golden warm candle light */
+  --accent-glow: rgba(245, 158, 11, 0.4);
+  --text-primary: #fef3c7; /* Soft amber white */
+  --text-secondary: #d97706; /* Golden brown */
+  --card-bg: rgba(15, 8, 4, 0.45);
+  --card-border: rgba(245, 158, 11, 0.12);
+}
+
+.dot.candle {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+/* Modals Backdrops & Layout */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-card {
+  width: 90%;
+  max-width: 520px;
+  border-radius: 24px;
+  padding: 28px;
+  max-height: 85vh;
+  overflow-y: auto;
+  transform: translateY(20px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--card-border);
+}
+
+.modal-overlay:not(.hidden) .modal-card {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 14px;
+}
+
+.modal-header h2 {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 2.2rem;
+  cursor: pointer;
+  line-height: 0.8;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  padding: 4px;
+}
+
+.modal-close-btn:hover {
+  color: var(--accent-color);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stats Overview Box Grid */
+.stats-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.stat-box {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform var(--transition-fast);
+}
+
+.stat-box:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.stat-value {
+  font-family: var(--font-title);
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.modal-section-title {
+  font-family: var(--font-title);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin: 24px 0 14px 0;
+  border-left: 3px solid var(--accent-color);
+  padding-left: 10px;
+  font-weight: 500;
+}
+
+/* Badge Grid Layout */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.badge-item {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 14px 6px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: help;
+  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.badge-item:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.badge-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  transition: filter 0.3s ease, transform var(--transition-fast);
+}
+
+.badge-item:hover .badge-icon {
+  transform: scale(1.12);
+}
+
+.badge-name {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: block;
+  white-space: nowrap;
+}
+
+/* Badge States */
+.badge-item.locked .badge-icon {
+  filter: grayscale(100%) opacity(0.2);
+}
+
+.badge-item.locked .badge-name {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.badge-item:not(.locked) {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.12);
+  background: rgba(245, 158, 11, 0.03);
+}
+
+/* Mood Selector Component */
+.mood-selector-container {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.mood-question {
+  display: block;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.mood-options {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mood-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 14px 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mood-btn .emoji {
+  font-size: 1.8rem;
+  transition: transform var(--transition-fast);
+  line-height: 1;
+}
+
+.mood-btn .label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.mood-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--accent-color);
+  transform: translateY(-3px);
+}
+
+.mood-btn:hover .emoji {
+  transform: scale(1.18);
+}
+
+.mood-btn.active {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+}
+
+.mood-btn.active .label {
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+/* Journal Entry Box */
+.journal-input-container {
+  margin-bottom: 24px;
+}
+
+.journal-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.textarea-custom {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 14px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  resize: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+
+.textarea-custom:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+}
+
+/* Journal History List Panel */
+.journal-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.journal-item {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.journal-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.journal-item-mood {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.journal-item-note {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.empty-journal-message {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 30px 0;
+  opacity: 0.8;
+}
+
+/* Stats trigger styling */
+.btn-stats-trigger {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 18px;
+}
+
+.btn-stats-trigger:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Responsive adjust for badges */
+@media (max-width: 500px) {
+  .badges-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
