@@ -336,7 +336,15 @@ class AudioManager {
     this.currentVideoId = videoId;
     if (this.ytPlayer && this.ytPlayerReady) {
       this.pendingPlayVideoId = null;
-      const activeVideoId = this.ytPlayer.getVideoData ? this.ytPlayer.getVideoData().video_id : null;
+      let activeVideoId = null;
+      try {
+        if (this.ytPlayer.getVideoData && this.ytPlayer.getVideoData()) {
+          activeVideoId = this.ytPlayer.getVideoData().video_id;
+        }
+      } catch (err) {
+        console.warn('Failed to get active video ID from YT player', err);
+      }
+      
       if (activeVideoId !== videoId) {
         this.ytPlayer.loadVideoById({
           videoId: videoId,
@@ -375,13 +383,23 @@ class AudioManager {
 
 export const audioManager = new AudioManager();
 
-// Inject YouTube Iframe API script dynamically
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
 // Global callback for YouTube API
 window.onYouTubeIframeAPIReady = () => {
   audioManager.initYTPlayer();
 };
+
+// Fallback check if YT is already loaded
+if (window.YT && window.YT.Player) {
+  audioManager.initYTPlayer();
+}
+
+// Inject YouTube Iframe API script dynamically after registering the callbacks
+const tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+const firstScriptTag = document.getElementsByTagName('script')[0];
+if (firstScriptTag) {
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+} else {
+  document.head.appendChild(tag);
+}
+
