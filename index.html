@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
@@ -443,38 +443,54 @@
     </div>
   </div>
 
-    <!-- Profile Switcher & Register Modal -->
+  <!-- Profile Switcher & Register Modal (Supabase Cloud Auth) -->
   <div id="profile-modal" class="modal-overlay hidden">
     <div class="modal-card profile-card glass-card">
       <div class="modal-header">
-        <h2>👤 จัดการโปรไฟล์ผู้ใช้งาน</h2>
+        <h2 id="profile-modal-title">👤 บัญชีผู้ใช้งานระบบคลาวด์</h2>
         <button id="btn-close-profile" class="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
         
-        <!-- View 1: Profile Selector List (Default) -->
-        <div id="profile-view-select" class="profile-view">
-          <p class="modal-instruction">เลือกโปรไฟล์เพื่อเข้าสู่ระบบ หรือสร้างโปรไฟล์ใหม่เพื่อเริ่มสะสมสถิติแยกต่างหาก:</p>
-          <div id="profile-list-grid" class="profile-list-grid">
-            <!-- Dynamically populated profiles -->
+        <!-- View 1: Sign In View -->
+        <div id="auth-view-signin" class="auth-view">
+          <p class="modal-instruction">ลงชื่อเข้าใช้เพื่อซิงก์ข้อมูลสถิติและการจดบันทึกของคุณข้ามอุปกรณ์:</p>
+          
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="auth-signin-email" class="journal-label">อีเมลผู้ใช้งาน (Email):</label>
+            <input type="email" id="auth-signin-email" class="input-custom" placeholder="name@example.com">
           </div>
-          <div class="modal-footer" style="margin-top: 20px; padding: 0;">
-            <button id="btn-go-to-create-profile" class="btn btn-primary" style="width: 100%;">
-              <span>➕ สร้างโปรไฟล์ผู้ใช้ใหม่</span>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="auth-signin-password" class="journal-label">รหัสผ่าน (Password):</label>
+            <input type="password" id="auth-signin-password" class="input-custom" placeholder="ป้อนรหัสผ่านของคุณ...">
+          </div>
+
+          <div class="modal-footer" style="padding: 0; display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-do-signin" class="btn btn-primary" style="width: 100%;">
+              <span>🔑 ลงชื่อเข้าใช้งาน</span>
+            </button>
+            <button id="btn-switch-to-signup" class="btn btn-secondary" style="width: 100%;">
+              <span>✨ ยังไม่มีบัญชี? สมัครใช้งานใหม่</span>
             </button>
           </div>
         </div>
 
-        <!-- View 2: Create Profile Form -->
-        <div id="profile-view-create" class="profile-view hidden">
-          <p class="modal-instruction">กรอกข้อมูลผู้ใช้งานและรหัสผ่านสำหรับลงชื่อเข้าใช้:</p>
+        <!-- View 2: Sign Up View -->
+        <div id="auth-view-signup" class="auth-view hidden">
+          <p class="modal-instruction">สมัครบัญชีสมาธิเพื่อจัดเก็บสถิติธรรมะของคุณแบบถาวร:</p>
           
-          <div class="form-group">
-            <label for="profile-name-input" class="journal-label">ชื่อเล่นหรือนามปากกา:</label>
-            <input type="text" id="profile-name-input" class="input-custom" placeholder="เช่น หลวงพี่คูณ, น้องข้าวหอม..." maxlength="15">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="auth-signup-email" class="journal-label">อีเมลสมัครใช้งาน (Email):</label>
+            <input type="email" id="auth-signup-email" class="input-custom" placeholder="name@example.com">
           </div>
 
-          <div class="form-group" style="margin-top: 14px;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="auth-signup-name" class="journal-label">ชื่อเล่น / นามปากกา:</label>
+            <input type="text" id="auth-signup-name" class="input-custom" placeholder="เช่น หลวงพี่คูณ, น้องสงบ..." maxlength="15">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
             <label class="journal-label">เลือกอิโมจิประจำตัว:</label>
             <div class="avatar-emoji-selector">
               <span class="avatar-emoji-option active" data-emoji="🧘">🧘</span>
@@ -488,36 +504,32 @@
             </div>
           </div>
 
-          <div class="form-group" style="margin-top: 14px;">
-            <label for="profile-pin-input" class="journal-label">รหัสผ่านสำหรับเข้าสู่ระบบ (ตัวเลข 4 หลัก):</label>
-            <input type="password" id="profile-pin-input" class="input-custom" placeholder="••••" maxlength="4" pattern="[0-9]*" inputmode="numeric" style="letter-spacing: 0.5em; text-align: center; font-size: 1.2rem;">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="auth-signup-password" class="journal-label">รหัสผ่าน (Password - อย่างน้อย 6 ตัวอักษร):</label>
+            <input type="password" id="auth-signup-password" class="input-custom" placeholder="ตั้งรหัสผ่านของคุณ...">
           </div>
 
-          <div class="modal-footer" style="margin-top: 20px; padding: 0; display: flex; gap: 10px;">
-            <button id="btn-cancel-create-profile" class="btn btn-secondary" style="flex: 1;">
-              <span>ย้อนกลับ</span>
+          <div class="modal-footer" style="padding: 0; display: flex; flex-direction: column; gap: 10px;">
+            <button id="btn-do-signup" class="btn btn-primary" style="width: 100%;">
+              <span>💾 สมัครบัญชีผู้ใช้</span>
             </button>
-            <button id="btn-save-profile" class="btn btn-primary" style="flex: 1;">
-              <span>💾 บันทึกผู้ใช้</span>
+            <button id="btn-switch-to-signin" class="btn btn-secondary" style="width: 100%;">
+              <span>มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่</span>
             </button>
           </div>
         </div>
 
-        <!-- View 3: Enter PIN Passcode Form -->
-        <div id="profile-view-pin" class="profile-view hidden">
-          <p class="modal-instruction" id="profile-pin-prompt">โปรดกรอกรหัสผ่าน 4 หลัก เพื่อสลับไปยังโปรไฟล์:</p>
-          <h3 id="profile-pin-target-name" style="text-align: center; margin-bottom: 16px;">หลวงพี่คูณ</h3>
-          
-          <div class="pin-entry-container">
-            <input type="password" id="profile-pin-entry" class="input-custom" placeholder="••••" maxlength="4" pattern="[0-9]*" inputmode="numeric" style="letter-spacing: 0.5em; text-align: center; font-size: 1.5rem; width: 60%; margin: 0 auto; display: block;">
+        <!-- View 3: Profile Panel View (When logged in) -->
+        <div id="auth-view-profile" class="auth-view hidden">
+          <div class="profile-summary-card" style="text-align: center; padding: 14px; background: rgba(255,255,255,0.02); border-radius: 12px; margin-bottom: 20px;">
+            <div id="auth-profile-avatar" style="font-size: 3rem; margin-bottom: 8px;">🧘</div>
+            <h3 id="auth-profile-nickname" style="margin: 0; font-size: 1.2rem;">หลวงพี่คูณ</h3>
+            <span id="auth-profile-email" style="font-size: 0.8rem; color: var(--text-secondary);">user@example.com</span>
           </div>
 
-          <div class="modal-footer" style="margin-top: 24px; padding: 0; display: flex; gap: 10px;">
-            <button id="btn-cancel-pin-entry" class="btn btn-secondary" style="flex: 1;">
-              <span>ยกเลิก</span>
-            </button>
-            <button id="btn-verify-pin" class="btn btn-primary" style="flex: 1;">
-              <span>🔑 เข้าสู่ระบบ</span>
+          <div class="modal-footer" style="padding: 0;">
+            <button id="btn-do-signout" class="btn btn-secondary" style="width: 100%; border-color: rgba(239, 68, 68, 0.4); color: #f87171;">
+              <span>🚪 ออกจากระบบ (Sign Out)</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { audioManager } from './audio.js';
 import { canvasBackground } from './canvas.js';
+import { supabase, isConfigured, syncLocalStatsToCloud } from './supabase.js';
 
 // Zen Quotes Presets
 const zenQuotes = [
@@ -53,19 +54,17 @@ let dbJournalHistoryList, dbJournalNote, btnSaveDbJournal, dbMoodBtns;
 let praiseMessage;
 let dbSelectedMood = null;
 
-// Profile Registry State
-let profilesList = [];
-let currentProfileId = 'default';
+// Profile Registry State (Supabase Cloud Auth Mode)
+let currentUserSession = null;
+let cloudProfile = { name: 'ผู้ปฏิบัติธรรม', emoji: '🧘' };
 
-// Profile DOM elements
-let btnHeaderProfile, profileActiveEmoji, profileActiveName;
-let profileModal, btnCloseProfile;
-let profileViewSelect, profileListGrid, btnGoToCreateProfile;
-let profileViewCreate, profileNameInput, profilePinInput, btnCancelCreateProfile, btnSaveProfile;
-let profileViewPin, profilePinPrompt, profilePinTargetName, profilePinEntry, btnCancelPinEntry, btnVerifyPin;
+// Cloud Auth DOM elements
+let profileModal, btnCloseProfile, btnHeaderProfile, profileActiveEmoji, profileActiveName, profileModalTitle;
+let authViewSignin, authSigninEmail, authSigninPassword, btnDoSignin, btnSwitchToSignup;
+let authViewSignup, authSignupEmail, authSignupName, authSignupPassword, btnDoSignup, btnSwitchToSignin;
+let authViewProfile, authProfileAvatar, authProfileNickname, authProfileEmail, btnDoSignout;
 let avatarEmojiOptions;
 let selectedCreateAvatar = '🧘';
-let pinTargetProfileId = null;
 
 // Share DOM elements
 let btnShareStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText;
@@ -167,23 +166,27 @@ function cacheDOMElements() {
   profileActiveEmoji = document.getElementById('profile-active-emoji');
   profileActiveName = document.getElementById('profile-active-name');
   profileModal = document.getElementById('profile-modal');
+  profileModalTitle = document.getElementById('profile-modal-title');
   btnCloseProfile = document.getElementById('btn-close-profile');
-  profileViewSelect = document.getElementById('profile-view-select');
-  profileListGrid = document.getElementById('profile-list-grid');
-  btnGoToCreateProfile = document.getElementById('btn-go-to-create-profile');
   
-  profileViewCreate = document.getElementById('profile-view-create');
-  profileNameInput = document.getElementById('profile-name-input');
-  profilePinInput = document.getElementById('profile-pin-input');
-  btnCancelCreateProfile = document.getElementById('btn-cancel-create-profile');
-  btnSaveProfile = document.getElementById('btn-save-profile');
+  authViewSignin = document.getElementById('auth-view-signin');
+  authSigninEmail = document.getElementById('auth-signin-email');
+  authSigninPassword = document.getElementById('auth-signin-password');
+  btnDoSignin = document.getElementById('btn-do-signin');
+  btnSwitchToSignup = document.getElementById('btn-switch-to-signup');
   
-  profileViewPin = document.getElementById('profile-view-pin');
-  profilePinPrompt = document.getElementById('profile-pin-prompt');
-  profilePinTargetName = document.getElementById('profile-pin-target-name');
-  profilePinEntry = document.getElementById('profile-pin-entry');
-  btnCancelPinEntry = document.getElementById('btn-cancel-pin-entry');
-  btnVerifyPin = document.getElementById('btn-verify-pin');
+  authViewSignup = document.getElementById('auth-view-signup');
+  authSignupEmail = document.getElementById('auth-signup-email');
+  authSignupName = document.getElementById('auth-signup-name');
+  authSignupPassword = document.getElementById('auth-signup-password');
+  btnDoSignup = document.getElementById('btn-do-signup');
+  btnSwitchToSignin = document.getElementById('btn-switch-to-signin');
+  
+  authViewProfile = document.getElementById('auth-view-profile');
+  authProfileAvatar = document.getElementById('auth-profile-avatar');
+  authProfileNickname = document.getElementById('auth-profile-nickname');
+  authProfileEmail = document.getElementById('auth-profile-email');
+  btnDoSignout = document.getElementById('btn-do-signout');
   
   avatarEmojiOptions = document.querySelectorAll('.avatar-emoji-option');
 
@@ -196,7 +199,7 @@ function cacheDOMElements() {
   btnCopyShareText = document.getElementById('btn-copy-share-text');
 
   // Load profiles and stats
-  loadProfilesRegistry();
+  initSupabaseAuth();
   loadStatsFromLocalStorage();
   updateProfileHeaderUI();
 }
@@ -421,33 +424,31 @@ function setupEventListeners() {
     saveDbFreeFormJournal();
   });
 
-  // --- Profile Switcher Listeners ---
+  // --- Profile / Auth Listeners ---
   if (btnHeaderProfile) {
     btnHeaderProfile.addEventListener('click', showProfileModal);
   }
   if (btnCloseProfile) {
     btnCloseProfile.addEventListener('click', closeProfileModal);
   }
-  if (btnGoToCreateProfile) {
-    btnGoToCreateProfile.addEventListener('click', () => {
-      showProfileView('create');
+  if (btnSwitchToSignup) {
+    btnSwitchToSignup.addEventListener('click', () => {
+      showAuthView('signup');
     });
   }
-  if (btnCancelCreateProfile) {
-    btnCancelCreateProfile.addEventListener('click', () => {
-      showProfileView('select');
+  if (btnSwitchToSignin) {
+    btnSwitchToSignin.addEventListener('click', () => {
+      showAuthView('signin');
     });
   }
-  if (btnSaveProfile) {
-    btnSaveProfile.addEventListener('click', handleCreateProfile);
+  if (btnDoSignin) {
+    btnDoSignin.addEventListener('click', handleCloudSignIn);
   }
-  if (btnCancelPinEntry) {
-    btnCancelPinEntry.addEventListener('click', () => {
-      showProfileView('select');
-    });
+  if (btnDoSignup) {
+    btnDoSignup.addEventListener('click', handleCloudSignUp);
   }
-  if (btnVerifyPin) {
-    btnVerifyPin.addEventListener('click', handleVerifyPin);
+  if (btnDoSignout) {
+    btnDoSignout.addEventListener('click', handleCloudSignOut);
   }
   
   // Custom Avatar Selector
@@ -458,15 +459,6 @@ function setupEventListeners() {
       selectedCreateAvatar = opt.getAttribute('data-emoji');
     });
   });
-
-  // PIN entry field listener to trigger verify on Enter key press
-  if (profilePinEntry) {
-    profilePinEntry.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') {
-        handleVerifyPin();
-      }
-    });
-  }
 
   // --- Sharing Listeners ---
   if (btnShareStats) {
@@ -753,6 +745,19 @@ function saveSessionJournal() {
   };
   dbStats.journal.unshift(newEntry); // newest first
   
+  // Save to Supabase if logged in
+  if (isConfigured && currentUserSession) {
+    supabase.from('journals').insert({
+      user_id: currentUserSession.user.id,
+      date: newEntry.date,
+      minutes: newEntry.minutes,
+      mood: newEntry.mood,
+      note: newEntry.note
+    }).then(({ error }) => {
+      if (error) console.error('Failed to save journal to Supabase:', error);
+    });
+  }
+  
   // Generate random praise
   const praise = getRandomPraise();
   dbStats.lastPraise = praise;
@@ -800,6 +805,19 @@ function saveDbFreeFormJournal() {
   };
   
   dbStats.journal.unshift(newEntry);
+  
+  // Save to Supabase if logged in
+  if (isConfigured && currentUserSession) {
+    supabase.from('journals').insert({
+      user_id: currentUserSession.user.id,
+      date: newEntry.date,
+      minutes: newEntry.minutes,
+      mood: newEntry.mood,
+      note: newEntry.note
+    }).then(({ error }) => {
+      if (error) console.error('Failed to save journal to Supabase:', error);
+    });
+  }
   
   // Custom praise for writing Dhamma logs
   const praise = "ขออนุโมทนาในการจดบันทึกธรรมทาน สติจดจ่อกุศลย่อมสร้างความสว่างไสวให้หนทางเดินจิตใจครับ";
@@ -927,36 +945,83 @@ function renderStatsDashboard() {
   }
 }
 
-function loadStatsFromLocalStorage() {
-  const profileKey = `khoun_monk_stats_profile_${currentProfileId}`;
-  let data = localStorage.getItem(profileKey);
-  
-  // SEAMLESS MIGRATION:
-  // If we are loading the 'default' profile and there is legacy data in 'khoun_monk_stats',
-  // migrate it to 'khoun_monk_stats_profile_default' and clear the legacy key.
-  if (currentProfileId === 'default' && !data) {
-    const legacyData = localStorage.getItem('khoun_monk_stats');
-    if (legacyData) {
-      data = legacyData;
-      localStorage.setItem(profileKey, legacyData);
-      localStorage.removeItem('khoun_monk_stats');
+async function loadStatsFromLocalStorage() {
+  if (isConfigured && currentUserSession) {
+    // Cloud Mode: Load stats from Supabase
+    try {
+      const userId = currentUserSession.user.id;
+      
+      // Load profile stats
+      const { data: profile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (profileErr) {
+        if (profileErr.code !== 'PGRST116') {
+          console.error('Error loading profile from Supabase:', profileErr);
+        }
+      } else if (profile) {
+        cloudProfile = {
+          name: profile.nickname,
+          emoji: profile.avatar
+        };
+        dbStats.totalMinutes = profile.total_minutes || 0;
+        dbStats.sessions = profile.sessions || 0;
+        dbStats.streak = profile.streak || 0;
+        dbStats.lastDate = profile.last_date || null;
+        dbStats.unlockedBadges = profile.unlocked_badges || [];
+      }
+
+      // Load journals
+      const { data: journals, error: journalErr } = await supabase
+        .from('journals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('date', { ascending: false });
+
+      if (journalErr) {
+        console.error('Error loading journals from Supabase:', journalErr);
+      } else {
+        dbStats.journal = (journals || []).map(j => ({
+          date: j.date,
+          minutes: j.minutes,
+          mood: j.mood,
+          note: j.note
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load stats from Supabase:', err);
+    }
+  } else {
+    // Local Fallback Mode: Load stats from LocalStorage
+    const data = localStorage.getItem('khoun_monk_stats_local');
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed && typeof parsed === 'object') {
+          dbStats = parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse local storage stats, resetting', e);
+      }
+    } else {
+      // Migrate legacy key 'khoun_monk_stats' if it exists
+      const legacyData = localStorage.getItem('khoun_monk_stats');
+      if (legacyData) {
+        localStorage.setItem('khoun_monk_stats_local', legacyData);
+        localStorage.removeItem('khoun_monk_stats');
+        try {
+          dbStats = JSON.parse(legacyData);
+        } catch (e) {}
+      } else {
+        dbStats = null;
+      }
     }
   }
 
-  if (data) {
-    try {
-      const parsed = JSON.parse(data);
-      if (parsed && typeof parsed === 'object') {
-        dbStats = parsed;
-      }
-    } catch (e) {
-      console.error('Failed to parse local storage stats, resetting', e);
-    }
-  } else {
-    dbStats = null;
-  }
-  
-  // Ensure dbStats is always fully initialized safely to prevent script crashes
+  // Ensure dbStats is always fully initialized safely
   if (!dbStats || typeof dbStats !== 'object') {
     dbStats = {
       totalMinutes: 0,
@@ -972,111 +1037,108 @@ function loadStatsFromLocalStorage() {
   if (!dbStats.journal) dbStats.journal = [];
 }
 
-function saveStatsToLocalStorage() {
-  const profileKey = `khoun_monk_stats_profile_${currentProfileId}`;
-  localStorage.setItem(profileKey, JSON.stringify(dbStats));
+async function saveStatsToLocalStorage() {
+  if (isConfigured && currentUserSession) {
+    // Cloud Mode: Save / Update stats to Supabase
+    try {
+      const userId = currentUserSession.user.id;
+      
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          nickname: cloudProfile.name,
+          avatar: cloudProfile.emoji,
+          total_minutes: dbStats.totalMinutes,
+          sessions: dbStats.sessions,
+          streak: dbStats.streak,
+          last_date: dbStats.lastDate,
+          unlocked_badges: dbStats.unlockedBadges
+        });
+
+      if (profileErr) {
+        console.error('Error saving profile to Supabase:', profileErr);
+      }
+    } catch (err) {
+      console.error('Failed to save profile to Supabase:', err);
+    }
+  } else {
+    // Local Fallback Mode: Save stats to LocalStorage
+    localStorage.setItem('khoun_monk_stats_local', JSON.stringify(dbStats));
+  }
 }
 
 /* ==========================================================================
-   MULTI-PROFILE & AUTHENTICATION MANAGER
+   SUPABASE CLOUD AUTHENTICATION MANAGER
    ========================================================================== */
 
-function loadProfilesRegistry() {
-  const profilesData = localStorage.getItem('khoun_monk_profiles');
-  if (profilesData) {
-    try {
-      profilesList = JSON.parse(profilesData);
-    } catch (e) {
-      console.error('Failed to parse profiles registry', e);
+function initSupabaseAuth() {
+  if (!isConfigured) return;
+
+  // Read current session immediately
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    currentUserSession = session;
+    if (session) {
+      loadStatsFromLocalStorage().then(() => {
+        updateProfileHeaderUI();
+        renderStatsDashboard();
+      });
     }
-  }
-  
-  // Initialize default profile if empty
-  if (!profilesList || !Array.isArray(profilesList) || profilesList.length === 0) {
-    profilesList = [
-      { id: 'default', name: 'หลวงพี่คูณ', emoji: '🧘', pin: '0000' }
-    ];
-    saveProfilesRegistry();
-  }
+  });
 
-  // Set active profile ID
-  const activeId = localStorage.getItem('khoun_monk_active_profile_id');
-  if (activeId && profilesList.some(p => p.id === activeId)) {
-    currentProfileId = activeId;
-  } else {
-    currentProfileId = profilesList[0].id;
-    localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
-  }
-}
-
-function saveProfilesRegistry() {
-  localStorage.setItem('khoun_monk_profiles', JSON.stringify(profilesList));
-}
-
-function updateProfileHeaderUI() {
-  const activeProfile = profilesList.find(p => p.id === currentProfileId);
-  if (activeProfile) {
-    if (profileActiveEmoji) profileActiveEmoji.textContent = activeProfile.emoji;
-    if (profileActiveName) profileActiveName.textContent = activeProfile.name;
-  }
-}
-
-function renderProfilesList() {
-  if (!profileListGrid) return;
-  profileListGrid.innerHTML = '';
-
-  profilesList.forEach(profile => {
-    const card = document.createElement('div');
-    card.className = `profile-item-card ${profile.id === currentProfileId ? 'active' : ''}`;
+  // Listen for auth state changes
+  supabase.auth.onAuthStateChange((event, session) => {
+    currentUserSession = session;
     
-    // Deletion button (not allowed on default profile)
-    let deleteBtnHtml = '';
-    if (profile.id !== 'default') {
-      deleteBtnHtml = `<button class="profile-item-delete-btn" title="ลบโปรไฟล์" data-id="${profile.id}">&times;</button>`;
+    if (session) {
+      // User is logged in! Load stats from Supabase
+      loadStatsFromLocalStorage().then(() => {
+        updateProfileHeaderUI();
+        renderStatsDashboard();
+        
+        // Try migrating any existing local fallback stats on first login
+        const localStats = localStorage.getItem('khoun_monk_stats_local');
+        if (localStats) {
+          try {
+            const parsed = JSON.parse(localStats);
+            if (parsed && parsed.totalMinutes > 0) {
+              syncLocalStatsToCloud(session.user.id, parsed).then(() => {
+                // Clear local stats to complete migration
+                localStorage.removeItem('khoun_monk_stats_local');
+                loadStatsFromLocalStorage().then(() => {
+                  renderStatsDashboard();
+                });
+              });
+            }
+          } catch (e) {}
+        }
+      });
+    } else {
+      // User is logged out
+      cloudProfile = { name: 'ผู้ปฏิบัติธรรม', emoji: '🧘' };
+      loadStatsFromLocalStorage();
+      updateProfileHeaderUI();
+      renderStatsDashboard();
     }
-
-    card.innerHTML = `
-      ${deleteBtnHtml}
-      <div class="profile-item-emoji">${profile.emoji}</div>
-      <div class="profile-item-name">${profile.name}</div>
-    `;
-
-    // Click handler to select/switch profile
-    card.addEventListener('click', (e) => {
-      // Ignore if delete button was clicked
-      if (e.target.classList.contains('profile-item-delete-btn')) {
-        e.stopPropagation();
-        handleDeleteProfile(profile.id);
-        return;
-      }
-      
-      // If profile has PIN (all profiles do, default is 0000)
-      promptForPin(profile.id);
-    });
-
-    profileListGrid.appendChild(card);
   });
 }
 
-function promptForPin(profileId) {
-  const profile = profilesList.find(p => p.id === profileId);
-  if (!profile) return;
-
-  pinTargetProfileId = profileId;
-  if (profilePinTargetName) profilePinTargetName.textContent = profile.name;
-  if (profilePinEntry) {
-    profilePinEntry.value = '';
-    setTimeout(() => profilePinEntry.focus(), 150);
+function updateProfileHeaderUI() {
+  if (isConfigured && currentUserSession) {
+    if (profileActiveEmoji) profileActiveEmoji.textContent = cloudProfile.emoji;
+    if (profileActiveName) profileActiveName.textContent = cloudProfile.name;
+  } else {
+    // Default fallback header UI
+    if (profileActiveEmoji) profileActiveEmoji.textContent = '🧘';
+    if (profileActiveName) profileActiveName.textContent = 'หลวงพี่คูณ (Local)';
   }
-  
-  showProfileView('pin');
 }
 
-function showProfileView(viewName) {
+function showAuthView(viewName) {
   const views = {
-    select: profileViewSelect,
-    create: profileViewCreate,
-    pin: profileViewPin
+    signin: authViewSignin,
+    signup: authViewSignup,
+    profile: authViewProfile
   };
 
   Object.keys(views).forEach(name => {
@@ -1088,13 +1150,32 @@ function showProfileView(viewName) {
       }
     }
   });
+
+  // Update modal title
+  if (profileModalTitle) {
+    if (viewName === 'signin') profileModalTitle.textContent = '🔑 ลงชื่อเข้าใช้งาน';
+    else if (viewName === 'signup') profileModalTitle.textContent = '✨ สมัครบัญชีผู้ใช้';
+    else if (viewName === 'profile') profileModalTitle.textContent = '👤 โปรไฟล์ของคุณ';
+  }
 }
 
 function showProfileModal() {
+  if (!isConfigured) {
+    alert('ระบบล็อกอินออนไลน์ยังไม่ได้ตั้งค่าคีย์เชื่อมต่อของ Supabase ครับ ⚙️\nโปรดตั้งค่า VITE_SUPABASE_URL และ VITE_SUPABASE_ANON_KEY ในไฟล์ .env นะครับ');
+    return;
+  }
+
   if (profileModal) {
     profileModal.classList.remove('hidden');
-    renderProfilesList();
-    showProfileView('select');
+    if (currentUserSession) {
+      // Render profile summary details
+      if (authProfileAvatar) authProfileAvatar.textContent = cloudProfile.emoji;
+      if (authProfileNickname) authProfileNickname.textContent = cloudProfile.name;
+      if (authProfileEmail) authProfileEmail.textContent = currentUserSession.user.email;
+      showAuthView('profile');
+    } else {
+      showAuthView('signin');
+    }
   }
 }
 
@@ -1103,107 +1184,104 @@ function closeProfileModal() {
     profileModal.classList.add('hidden');
   }
   // Clear inputs
-  if (profileNameInput) profileNameInput.value = '';
-  if (profilePinInput) profilePinInput.value = '';
-  if (profilePinEntry) profilePinEntry.value = '';
-  pinTargetProfileId = null;
+  if (authSigninEmail) authSigninEmail.value = '';
+  if (authSigninPassword) authSigninPassword.value = '';
+  if (authSignupEmail) authSignupEmail.value = '';
+  if (authSignupName) authSignupName.value = '';
+  if (authSignupPassword) authSignupPassword.value = '';
 }
 
-function handleCreateProfile() {
-  const name = profileNameInput.value.trim();
-  const pin = profilePinInput.value.trim();
+async function handleCloudSignIn() {
+  const email = authSigninEmail.value.trim();
+  const password = authSigninPassword.value.trim();
 
-  if (!name) {
-    alert('กรุณากรอกชื่อโปรไฟล์ของคุณด้วยนะครับ 😊');
-    return;
-  }
-  if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
-    alert('กรุณากรอกรหัสผ่านเป็นตัวเลข 4 หลักถ้วนครับ 🔑');
+  if (!email || !password) {
+    alert('กรุณากรอกอีเมลและรหัสผ่านด้วยนะครับ 😊');
     return;
   }
 
-  // Create new profile object
-  const newProfileId = 'profile_' + Date.now();
-  const newProfile = {
-    id: newProfileId,
-    name: name,
-    emoji: selectedCreateAvatar,
-    pin: pin
-  };
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  profilesList.push(newProfile);
-  saveProfilesRegistry();
-  
-  alert(`สร้างโปรไฟล์ "${name}" สำเร็จแล้ว! ยินดีต้อนรับสู่ก้าวแรกแห่งจิตใจที่สงบครับ ✨`);
-  
-  // Switch to the newly created profile immediately
-  currentProfileId = newProfileId;
-  localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
-  
-  loadStatsFromLocalStorage();
-  updateProfileHeaderUI();
-  renderStatsDashboard();
-  
-  closeProfileModal();
-}
-
-function handleVerifyPin() {
-  const enteredPin = profilePinEntry.value.trim();
-  const profile = profilesList.find(p => p.id === pinTargetProfileId);
-
-  if (!profile) return;
-
-  if (enteredPin === profile.pin) {
-    // Correct PIN! Switch profile
-    currentProfileId = profile.id;
-    localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
-    
-    loadStatsFromLocalStorage();
-    updateProfileHeaderUI();
-    renderStatsDashboard();
-    
-    alert(`เข้าสู่ระบบโปรไฟล์ "${profile.name}" สำเร็จแล้วครับ 🧘`);
-    closeProfileModal();
-  } else {
-    alert('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้งครับ ❌');
-    if (profilePinEntry) {
-      profilePinEntry.value = '';
-      profilePinEntry.focus();
+    if (error) {
+      alert(`การเข้าสู่ระบบล้มเหลว: ${error.message} ❌`);
+    } else {
+      closeProfileModal();
     }
+  } catch (err) {
+    console.error('Sign in error', err);
+    alert('เกิดข้อผิดพลาดในการลงชื่อเข้าใช้ กรุณาลองใหม่อีกครั้งครับ');
   }
 }
 
-function handleDeleteProfile(profileId) {
-  const profile = profilesList.find(p => p.id === profileId);
-  if (!profile) return;
+async function handleCloudSignUp() {
+  const email = authSignupEmail.value.trim();
+  const name = authSignupName.value.trim();
+  const password = authSignupPassword.value.trim();
 
-  const enteredPin = prompt(`คุณแน่ใจหรือไม่ที่จะลบโปรไฟล์ "${profile.name}"? ข้อมูลสถิติทั้งหมดจะสูญหายถาวร\n\nกรุณากรอกรหัสผ่าน 4 หลักของโปรไฟล์นี้เพื่อยืนยันการลบ:`);
-  
-  if (enteredPin === null) return; // User cancelled prompt
+  if (!email || !name || !password) {
+    alert('กรุณากรอกข้อมูลสมัครสมาชิกให้ครบถ้วนด้วยนะครับ 😊');
+    return;
+  }
 
-  if (enteredPin === profile.pin) {
-    // Delete stats from localStorage
-    localStorage.removeItem(`khoun_monk_stats_profile_${profileId}`);
-    
-    // Remove from registry
-    profilesList = profilesList.filter(p => p.id !== profileId);
-    saveProfilesRegistry();
-    
-    alert('ลบโปรไฟล์และสถิติทั้งหมดเรียบร้อยแล้วครับ');
-    
-    // If the active profile was deleted, switch back to default profile
-    if (currentProfileId === profileId) {
-      currentProfileId = 'default';
-      localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
-      loadStatsFromLocalStorage();
-      updateProfileHeaderUI();
-      renderStatsDashboard();
+  if (password.length < 6) {
+    alert('กรุณาตั้งรหัสผ่านยาวอย่างน้อย 6 ตัวอักษรขึ้นไปเพื่อความปลอดภัยครับ 🔒');
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    if (error) {
+      alert(`การสมัครสมาชิกล้มเหลว: ${error.message} ❌`);
+      return;
     }
-    
-    renderProfilesList();
-    showProfileView('select');
-  } else {
-    alert('รหัสผ่านไม่ถูกต้อง การยืนยันลบล้มเหลว ❌');
+
+    if (data && data.user) {
+      // Create user record in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          nickname: name,
+          avatar: selectedCreateAvatar,
+          total_minutes: 0,
+          sessions: 0,
+          streak: 0,
+          last_date: null,
+          unlocked_badges: []
+        });
+
+      if (profileError) {
+        console.error('Failed to create cloud profile record:', profileError);
+      }
+
+      alert('สมัครบัญชีสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว! ขออนุโมทนาในการก้าวแรกครั้งนี้ครับ ✨');
+      closeProfileModal();
+    }
+  } catch (err) {
+    console.error('Sign up error', err);
+    alert('เกิดข้อผิดพลาดในการสมัครสมาชิก กรุณาลองใหม่อีกครั้งครับ');
+  }
+}
+
+async function handleCloudSignOut() {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      alert(`การออกจากระบบล้มเหลว: ${error.message} ❌`);
+    } else {
+      alert('ออกจากระบบเรียบร้อยแล้วครับ แล้วพบกันใหม่ครับ 🕊️');
+      closeProfileModal();
+    }
+  } catch (err) {
+    console.error('Sign out error', err);
   }
 }
 
@@ -1212,10 +1290,11 @@ function handleDeleteProfile(profileId) {
    ========================================================================== */
 
 function generateShareText() {
-  const activeProfile = profilesList.find(p => p.id === currentProfileId) || { name: 'หลวงพี่คูณ', emoji: '🧘' };
+  const name = currentUserSession ? cloudProfile.name : 'หลวงพี่คูณ (Local)';
+  const emoji = currentUserSession ? cloudProfile.emoji : '🧘';
   
   let shareText = `🕊️ บันทึกความดีและผลปฏิบัติธรรม\n`;
-  shareText += `👤 ผู้ใช้: ${activeProfile.emoji} ${activeProfile.name}\n`;
+  shareText += `👤 ผู้ใช้: ${emoji} ${name}\n`;
   shareText += `🧘 นั่งสมาธิสะสม: ${dbStats.totalMinutes} นาที\n`;
   shareText += ` Sessions: ${dbStats.sessions} ครั้ง\n`;
   shareText += `🔥 ความเพียรต่อเนื่อง: ${dbStats.streak} วัน\n`;
@@ -1264,7 +1343,6 @@ function doNativeShare() {
       console.warn('Native share failed or cancelled', err);
     });
   } else {
-    // Fallback to copy
     copyShareText();
   }
 }
