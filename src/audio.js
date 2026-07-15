@@ -1,4 +1,8 @@
-// AuraZen Audio Manager using Web Audio API
+const ytStartTimes = {
+  '8MXGh1_eCgY': 1008,
+  'rsSh0uP9hfI': 10,
+  'tHGVGkAPLIY': 44
+};
 
 class AudioManager {
   constructor() {
@@ -345,10 +349,11 @@ class AudioManager {
         console.warn('Failed to get active video ID from YT player', err);
       }
       
+      const startSecs = ytStartTimes[videoId] || 0;
       if (activeVideoId !== videoId) {
         this.ytPlayer.loadVideoById({
           videoId: videoId,
-          startSeconds: 0
+          startSeconds: startSecs
         });
       } else {
         this.ytPlayer.playVideo();
