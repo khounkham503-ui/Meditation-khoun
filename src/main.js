@@ -200,9 +200,13 @@ function cacheDOMElements() {
   btnShareSite = document.getElementById('btn-share-site');
 
   // Load profiles and stats
-  initSupabaseAuth();
-  loadStatsFromLocalStorage();
-  updateProfileHeaderUI();
+  if (isConfigured) {
+    initSupabaseAuth();
+  } else {
+    loadStatsFromLocalStorage().then(() => {
+      updateProfileHeaderUI();
+    });
+  }
 }
 
 function initCanvas() {
@@ -1000,7 +1004,26 @@ async function loadStatsFromLocalStorage() {
     }
   } else {
     // Local Fallback Mode: Load stats from LocalStorage
-    const data = localStorage.getItem('khoun_monk_stats_local');
+    let data = localStorage.getItem('khoun_monk_stats_local');
+    if (!data) {
+      // Migrate from the previous default profile key used in v4.0
+      const prevProfileData = localStorage.getItem('khoun_monk_stats_profile_default');
+      if (prevProfileData) {
+        data = prevProfileData;
+        localStorage.setItem('khoun_monk_stats_local', prevProfileData);
+        // Clean up to prevent duplicate migrations
+        localStorage.removeItem('khoun_monk_stats_profile_default');
+      } else {
+        // Migrate from legacy key 'khoun_monk_stats' if it exists
+        const legacyData = localStorage.getItem('khoun_monk_stats');
+        if (legacyData) {
+          data = legacyData;
+          localStorage.setItem('khoun_monk_stats_local', legacyData);
+          localStorage.removeItem('khoun_monk_stats');
+        }
+      }
+    }
+    
     if (data) {
       try {
         const parsed = JSON.parse(data);
@@ -1011,17 +1034,7 @@ async function loadStatsFromLocalStorage() {
         console.error('Failed to parse local storage stats, resetting', e);
       }
     } else {
-      // Migrate legacy key 'khoun_monk_stats' if it exists
-      const legacyData = localStorage.getItem('khoun_monk_stats');
-      if (legacyData) {
-        localStorage.setItem('khoun_monk_stats_local', legacyData);
-        localStorage.removeItem('khoun_monk_stats');
-        try {
-          dbStats = JSON.parse(legacyData);
-        } catch (e) {}
-      } else {
-        dbStats = null;
-      }
+      dbStats = null;
     }
   }
 
@@ -1120,9 +1133,10 @@ function initSupabaseAuth() {
     } else {
       // User is logged out
       cloudProfile = { name: 'ผู้ปฏิบัติธรรม', emoji: '🧘' };
-      loadStatsFromLocalStorage();
-      updateProfileHeaderUI();
-      renderStatsDashboard();
+      loadStatsFromLocalStorage().then(() => {
+        updateProfileHeaderUI();
+        renderStatsDashboard();
+      });
     }
   });
 }
