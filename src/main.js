@@ -67,7 +67,7 @@ let avatarEmojiOptions;
 let selectedCreateAvatar = '🧘';
 
 // Share DOM elements
-let btnShareStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText;
+let btnShareStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText, btnShareSite;
 
 // Stats & Journal State
 let dbStats = {
@@ -197,6 +197,7 @@ function cacheDOMElements() {
   sharePreviewText = document.getElementById('share-preview-text');
   btnDoNativeShare = document.getElementById('btn-do-native-share');
   btnCopyShareText = document.getElementById('btn-copy-share-text');
+  btnShareSite = document.getElementById('btn-share-site');
 
   // Load profiles and stats
   initSupabaseAuth();
@@ -472,6 +473,9 @@ function setupEventListeners() {
   }
   if (btnCopyShareText) {
     btnCopyShareText.addEventListener('click', copyShareText);
+  }
+  if (btnShareSite) {
+    btnShareSite.addEventListener('click', handleShareSite);
   }
 }
 
@@ -1356,4 +1360,28 @@ function copyShareText() {
     console.error('Failed to copy text', err);
     alert('ไม่สามารถคัดลอกลงคลิปบอร์ดได้ กรุณาคัดลอกจากกล่องข้อความพรีวิวด้วยตนเองครับ');
   });
+}
+
+function handleShareSite() {
+  const shareTitle = 'Khoun Monk - แอปพลิเคชันฝึกสมาธิออนไลน์';
+  const shareText = '🕊️ ชวนร่วมนั่งสมาธิ ปฏิบัติธรรม สะสมเวลาความเพียรและบันทึกสภาวะธรรมทางออนไลน์ด้วยกันครับ 🧘✨\n';
+  const shareUrl = window.location.origin + window.location.pathname;
+
+  if (navigator.share) {
+    navigator.share({
+      title: shareTitle,
+      text: shareText,
+      url: shareUrl
+    }).catch(err => {
+      console.warn('Native share failed or cancelled', err);
+    });
+  } else {
+    // Copy website link to clipboard
+    navigator.clipboard.writeText(`${shareText}${shareUrl}`).then(() => {
+      alert('คัดลอกลิงก์เว็บไซต์ลงคลิปบอร์ดแล้ว! ส่งต่อชวนเพื่อน ๆ มาร่วมทำสมาธิด้วยกันใน LINE หรือโซเชียลได้เลยครับ 😊');
+    }).catch(err => {
+      console.error('Failed to copy share link', err);
+      alert('ไม่สามารถคัดลอกลิงก์ได้โดยอัตโนมัติ คุณสามารถคัดลอก URL หน้าเว็บส่งแชร์ต่อได้ทันทีครับ');
+    });
+  }
 }
