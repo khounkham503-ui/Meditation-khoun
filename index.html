@@ -58,22 +58,31 @@
         </nav>
       </div>
 
-      <!-- Theme Switcher -->
-      <div class="theme-panel">
-        <span class="theme-label">เลือกธีม:</span>
-        <div class="theme-options">
-          <button id="theme-btn-midnight" class="theme-btn active" data-theme="midnight" title="Midnight Stars">
-            <span class="dot midnight"></span>
-          </button>
-          <button id="theme-btn-forest" class="theme-btn" data-theme="forest" title="Forest Mist">
-            <span class="dot forest"></span>
-          </button>
-          <button id="theme-btn-sunset" class="theme-btn" data-theme="sunset" title="Sunset Warmth">
-            <span class="dot sunset"></span>
-          </button>
-          <button id="theme-btn-candle" class="theme-btn" data-theme="candle" title="Zen Candle">
-            <span class="dot candle"></span>
-          </button>
+      <!-- Header Action Elements -->
+      <div class="header-actions" style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <!-- User Profile Switcher -->
+        <button id="header-profile-btn" class="profile-nav-btn" title="จัดการโปรไฟล์ผู้ใช้">
+          <span id="profile-active-emoji" class="profile-emoji">🧘</span>
+          <span id="profile-active-name" class="profile-name">หลวงพี่คูณ</span>
+        </button>
+
+        <!-- Theme Switcher -->
+        <div class="theme-panel">
+          <span class="theme-label">เลือกธีม:</span>
+          <div class="theme-options">
+            <button id="theme-btn-midnight" class="theme-btn active" data-theme="midnight" title="Midnight Stars">
+              <span class="dot midnight"></span>
+            </button>
+            <button id="theme-btn-forest" class="theme-btn" data-theme="forest" title="Forest Mist">
+              <span class="dot forest"></span>
+            </button>
+            <button id="theme-btn-sunset" class="theme-btn" data-theme="sunset" title="Sunset Warmth">
+              <span class="dot sunset"></span>
+            </button>
+            <button id="theme-btn-candle" class="theme-btn" data-theme="candle" title="Zen Candle">
+              <span class="dot candle"></span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -321,8 +330,11 @@
       <section class="db-section-right">
         <!-- 1. Stats Numbers Grid -->
         <div class="stats-overview-card glass-card">
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <h2>📊 รายงานสถิติการปฏิบัติ</h2>
+            <button id="btn-share-stats" class="btn btn-secondary btn-small btn-icon" style="margin: 0; padding: 6px 12px; font-size: 0.75rem;" title="แชร์ภาพการ์ดสถิติหรือคัดลอกลงคลิปบอร์ด">
+              <span>📤 แชร์ความดี</span>
+            </button>
           </div>
           <div class="stats-overview-grid" style="margin-top: 14px;">
             <div class="stat-box">
@@ -425,6 +437,119 @@
         <div class="modal-footer">
           <button id="btn-save-journal" class="btn btn-primary" style="width: 100%;">
             <span>บันทึกความเพียรและเสร็จสิ้น</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Profile Switcher & Register Modal -->
+  <div id="profile-modal" class="modal-overlay hidden">
+    <div class="modal-card profile-card glass-card">
+      <div class="modal-header">
+        <h2>👤 จัดการโปรไฟล์ผู้ใช้งาน</h2>
+        <button id="btn-close-profile" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- View 1: Profile Selector List (Default) -->
+        <div id="profile-view-select" class="profile-view">
+          <p class="modal-instruction">เลือกโปรไฟล์เพื่อเข้าสู่ระบบ หรือสร้างโปรไฟล์ใหม่เพื่อเริ่มสะสมสถิติแยกต่างหาก:</p>
+          <div id="profile-list-grid" class="profile-list-grid">
+            <!-- Dynamically populated profiles -->
+          </div>
+          <div class="modal-footer" style="margin-top: 20px; padding: 0;">
+            <button id="btn-go-to-create-profile" class="btn btn-primary" style="width: 100%;">
+              <span>➕ สร้างโปรไฟล์ผู้ใช้ใหม่</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- View 2: Create Profile Form -->
+        <div id="profile-view-create" class="profile-view hidden">
+          <p class="modal-instruction">กรอกข้อมูลผู้ใช้งานและรหัสผ่านสำหรับลงชื่อเข้าใช้:</p>
+          
+          <div class="form-group">
+            <label for="profile-name-input" class="journal-label">ชื่อเล่นหรือนามปากกา:</label>
+            <input type="text" id="profile-name-input" class="input-custom" placeholder="เช่น หลวงพี่คูณ, น้องข้าวหอม..." maxlength="15">
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label class="journal-label">เลือกอิโมจิประจำตัว:</label>
+            <div class="avatar-emoji-selector">
+              <span class="avatar-emoji-option active" data-emoji="🧘">🧘</span>
+              <span class="avatar-emoji-option" data-emoji="😇">😇</span>
+              <span class="avatar-emoji-option" data-emoji="😌">😌</span>
+              <span class="avatar-emoji-option" data-emoji="🌅">🌅</span>
+              <span class="avatar-emoji-option" data-emoji="🌸">🌸</span>
+              <span class="avatar-emoji-option" data-emoji="💎">💎</span>
+              <span class="avatar-emoji-option" data-emoji="🍃">🍃</span>
+              <span class="avatar-emoji-option" data-emoji="🔥">🔥</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="profile-pin-input" class="journal-label">รหัสผ่านสำหรับเข้าสู่ระบบ (ตัวเลข 4 หลัก):</label>
+            <input type="password" id="profile-pin-input" class="input-custom" placeholder="••••" maxlength="4" pattern="[0-9]*" inputmode="numeric" style="letter-spacing: 0.5em; text-align: center; font-size: 1.2rem;">
+          </div>
+
+          <div class="modal-footer" style="margin-top: 20px; padding: 0; display: flex; gap: 10px;">
+            <button id="btn-cancel-create-profile" class="btn btn-secondary" style="flex: 1;">
+              <span>ย้อนกลับ</span>
+            </button>
+            <button id="btn-save-profile" class="btn btn-primary" style="flex: 1;">
+              <span>💾 บันทึกผู้ใช้</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- View 3: Enter PIN Passcode Form -->
+        <div id="profile-view-pin" class="profile-view hidden">
+          <p class="modal-instruction" id="profile-pin-prompt">โปรดกรอกรหัสผ่าน 4 หลัก เพื่อสลับไปยังโปรไฟล์:</p>
+          <h3 id="profile-pin-target-name" style="text-align: center; margin-bottom: 16px;">หลวงพี่คูณ</h3>
+          
+          <div class="pin-entry-container">
+            <input type="password" id="profile-pin-entry" class="input-custom" placeholder="••••" maxlength="4" pattern="[0-9]*" inputmode="numeric" style="letter-spacing: 0.5em; text-align: center; font-size: 1.5rem; width: 60%; margin: 0 auto; display: block;">
+          </div>
+
+          <div class="modal-footer" style="margin-top: 24px; padding: 0; display: flex; gap: 10px;">
+            <button id="btn-cancel-pin-entry" class="btn btn-secondary" style="flex: 1;">
+              <span>ยกเลิก</span>
+            </button>
+            <button id="btn-verify-pin" class="btn btn-primary" style="flex: 1;">
+              <span>🔑 เข้าสู่ระบบ</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Achievement Modal -->
+  <div id="share-modal" class="modal-overlay hidden">
+    <div class="modal-card share-card glass-card">
+      <div class="modal-header">
+        <h2>📤 แชร์บันทึกความดีของคุณ</h2>
+        <button id="btn-close-share" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-instruction">เลือกวิธีการแชร์เพื่อส่งต่อพลังแห่งความดีและความสงบสุขไปยังโซเชียลมีเดีย:</p>
+        
+        <!-- Generated template preview -->
+        <div class="share-preview-box">
+          <div class="praise-badge">📊 Meditation Card</div>
+          <div id="share-preview-text" class="share-preview-text">
+            <!-- Text generated dynamically -->
+          </div>
+        </div>
+
+        <div class="modal-footer" style="margin-top: 20px; padding: 0; display: flex; flex-direction: column; gap: 10px;">
+          <button id="btn-do-native-share" class="btn btn-primary" style="width: 100%;">
+            <span>📱 แชร์ไปยังแอปอื่น (LINE, Facebook...)</span>
+          </button>
+          <button id="btn-copy-share-text" class="btn btn-secondary" style="width: 100%;">
+            <span>📋 คัดลอกบันทึกไปยังคลิปบอร์ด</span>
           </button>
         </div>
       </div>

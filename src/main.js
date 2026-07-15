@@ -53,6 +53,23 @@ let dbJournalHistoryList, dbJournalNote, btnSaveDbJournal, dbMoodBtns;
 let praiseMessage;
 let dbSelectedMood = null;
 
+// Profile Registry State
+let profilesList = [];
+let currentProfileId = 'default';
+
+// Profile DOM elements
+let btnHeaderProfile, profileActiveEmoji, profileActiveName;
+let profileModal, btnCloseProfile;
+let profileViewSelect, profileListGrid, btnGoToCreateProfile;
+let profileViewCreate, profileNameInput, profilePinInput, btnCancelCreateProfile, btnSaveProfile;
+let profileViewPin, profilePinPrompt, profilePinTargetName, profilePinEntry, btnCancelPinEntry, btnVerifyPin;
+let avatarEmojiOptions;
+let selectedCreateAvatar = '🧘';
+let pinTargetProfileId = null;
+
+// Share DOM elements
+let btnShareStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText;
+
 // Stats & Journal State
 let dbStats = {
   totalMinutes: 0,
@@ -118,7 +135,9 @@ function cacheDOMElements() {
   valGuide = document.getElementById('val-guide');
 
   // Set initial stroke dasharray
-  timerProgress.style.strokeDasharray = `${CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+  if (timerProgress) {
+    timerProgress.style.strokeDasharray = `${CIRCUMFERENCE} ${CIRCUMFERENCE}`;
+  }
   updateTimerDisplay();
 
   // Quick Modal caching
@@ -143,8 +162,43 @@ function cacheDOMElements() {
   dbMoodBtns = document.querySelectorAll('.mood-btn-db');
   praiseMessage = document.getElementById('praise-message');
 
-  // Load stats from LocalStorage
+  // Cache Profile elements
+  btnHeaderProfile = document.getElementById('header-profile-btn');
+  profileActiveEmoji = document.getElementById('profile-active-emoji');
+  profileActiveName = document.getElementById('profile-active-name');
+  profileModal = document.getElementById('profile-modal');
+  btnCloseProfile = document.getElementById('btn-close-profile');
+  profileViewSelect = document.getElementById('profile-view-select');
+  profileListGrid = document.getElementById('profile-list-grid');
+  btnGoToCreateProfile = document.getElementById('btn-go-to-create-profile');
+  
+  profileViewCreate = document.getElementById('profile-view-create');
+  profileNameInput = document.getElementById('profile-name-input');
+  profilePinInput = document.getElementById('profile-pin-input');
+  btnCancelCreateProfile = document.getElementById('btn-cancel-create-profile');
+  btnSaveProfile = document.getElementById('btn-save-profile');
+  
+  profileViewPin = document.getElementById('profile-view-pin');
+  profilePinPrompt = document.getElementById('profile-pin-prompt');
+  profilePinTargetName = document.getElementById('profile-pin-target-name');
+  profilePinEntry = document.getElementById('profile-pin-entry');
+  btnCancelPinEntry = document.getElementById('btn-cancel-pin-entry');
+  btnVerifyPin = document.getElementById('btn-verify-pin');
+  
+  avatarEmojiOptions = document.querySelectorAll('.avatar-emoji-option');
+
+  // Cache Share elements
+  btnShareStats = document.getElementById('btn-share-stats');
+  shareModal = document.getElementById('share-modal');
+  btnCloseShare = document.getElementById('btn-close-share');
+  sharePreviewText = document.getElementById('share-preview-text');
+  btnDoNativeShare = document.getElementById('btn-do-native-share');
+  btnCopyShareText = document.getElementById('btn-copy-share-text');
+
+  // Load profiles and stats
+  loadProfilesRegistry();
   loadStatsFromLocalStorage();
+  updateProfileHeaderUI();
 }
 
 function initCanvas() {
@@ -366,6 +420,67 @@ function setupEventListeners() {
   btnSaveDbJournal.addEventListener('click', () => {
     saveDbFreeFormJournal();
   });
+
+  // --- Profile Switcher Listeners ---
+  if (btnHeaderProfile) {
+    btnHeaderProfile.addEventListener('click', showProfileModal);
+  }
+  if (btnCloseProfile) {
+    btnCloseProfile.addEventListener('click', closeProfileModal);
+  }
+  if (btnGoToCreateProfile) {
+    btnGoToCreateProfile.addEventListener('click', () => {
+      showProfileView('create');
+    });
+  }
+  if (btnCancelCreateProfile) {
+    btnCancelCreateProfile.addEventListener('click', () => {
+      showProfileView('select');
+    });
+  }
+  if (btnSaveProfile) {
+    btnSaveProfile.addEventListener('click', handleCreateProfile);
+  }
+  if (btnCancelPinEntry) {
+    btnCancelPinEntry.addEventListener('click', () => {
+      showProfileView('select');
+    });
+  }
+  if (btnVerifyPin) {
+    btnVerifyPin.addEventListener('click', handleVerifyPin);
+  }
+  
+  // Custom Avatar Selector
+  avatarEmojiOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      avatarEmojiOptions.forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      selectedCreateAvatar = opt.getAttribute('data-emoji');
+    });
+  });
+
+  // PIN entry field listener to trigger verify on Enter key press
+  if (profilePinEntry) {
+    profilePinEntry.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        handleVerifyPin();
+      }
+    });
+  }
+
+  // --- Sharing Listeners ---
+  if (btnShareStats) {
+    btnShareStats.addEventListener('click', openShareModal);
+  }
+  if (btnCloseShare) {
+    btnCloseShare.addEventListener('click', closeShareModal);
+  }
+  if (btnDoNativeShare) {
+    btnDoNativeShare.addEventListener('click', doNativeShare);
+  }
+  if (btnCopyShareText) {
+    btnCopyShareText.addEventListener('click', copyShareText);
+  }
 }
 
 // Quote Rotator Logic (Fade transition)
@@ -813,7 +928,21 @@ function renderStatsDashboard() {
 }
 
 function loadStatsFromLocalStorage() {
-  const data = localStorage.getItem('khoun_monk_stats');
+  const profileKey = `khoun_monk_stats_profile_${currentProfileId}`;
+  let data = localStorage.getItem(profileKey);
+  
+  // SEAMLESS MIGRATION:
+  // If we are loading the 'default' profile and there is legacy data in 'khoun_monk_stats',
+  // migrate it to 'khoun_monk_stats_profile_default' and clear the legacy key.
+  if (currentProfileId === 'default' && !data) {
+    const legacyData = localStorage.getItem('khoun_monk_stats');
+    if (legacyData) {
+      data = legacyData;
+      localStorage.setItem(profileKey, legacyData);
+      localStorage.removeItem('khoun_monk_stats');
+    }
+  }
+
   if (data) {
     try {
       const parsed = JSON.parse(data);
@@ -823,6 +952,8 @@ function loadStatsFromLocalStorage() {
     } catch (e) {
       console.error('Failed to parse local storage stats, resetting', e);
     }
+  } else {
+    dbStats = null;
   }
   
   // Ensure dbStats is always fully initialized safely to prevent script crashes
@@ -841,7 +972,310 @@ function loadStatsFromLocalStorage() {
   if (!dbStats.journal) dbStats.journal = [];
 }
 
-
 function saveStatsToLocalStorage() {
-  localStorage.setItem('khoun_monk_stats', JSON.stringify(dbStats));
+  const profileKey = `khoun_monk_stats_profile_${currentProfileId}`;
+  localStorage.setItem(profileKey, JSON.stringify(dbStats));
+}
+
+/* ==========================================================================
+   MULTI-PROFILE & AUTHENTICATION MANAGER
+   ========================================================================== */
+
+function loadProfilesRegistry() {
+  const profilesData = localStorage.getItem('khoun_monk_profiles');
+  if (profilesData) {
+    try {
+      profilesList = JSON.parse(profilesData);
+    } catch (e) {
+      console.error('Failed to parse profiles registry', e);
+    }
+  }
+  
+  // Initialize default profile if empty
+  if (!profilesList || !Array.isArray(profilesList) || profilesList.length === 0) {
+    profilesList = [
+      { id: 'default', name: 'หลวงพี่คูณ', emoji: '🧘', pin: '0000' }
+    ];
+    saveProfilesRegistry();
+  }
+
+  // Set active profile ID
+  const activeId = localStorage.getItem('khoun_monk_active_profile_id');
+  if (activeId && profilesList.some(p => p.id === activeId)) {
+    currentProfileId = activeId;
+  } else {
+    currentProfileId = profilesList[0].id;
+    localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
+  }
+}
+
+function saveProfilesRegistry() {
+  localStorage.setItem('khoun_monk_profiles', JSON.stringify(profilesList));
+}
+
+function updateProfileHeaderUI() {
+  const activeProfile = profilesList.find(p => p.id === currentProfileId);
+  if (activeProfile) {
+    if (profileActiveEmoji) profileActiveEmoji.textContent = activeProfile.emoji;
+    if (profileActiveName) profileActiveName.textContent = activeProfile.name;
+  }
+}
+
+function renderProfilesList() {
+  if (!profileListGrid) return;
+  profileListGrid.innerHTML = '';
+
+  profilesList.forEach(profile => {
+    const card = document.createElement('div');
+    card.className = `profile-item-card ${profile.id === currentProfileId ? 'active' : ''}`;
+    
+    // Deletion button (not allowed on default profile)
+    let deleteBtnHtml = '';
+    if (profile.id !== 'default') {
+      deleteBtnHtml = `<button class="profile-item-delete-btn" title="ลบโปรไฟล์" data-id="${profile.id}">&times;</button>`;
+    }
+
+    card.innerHTML = `
+      ${deleteBtnHtml}
+      <div class="profile-item-emoji">${profile.emoji}</div>
+      <div class="profile-item-name">${profile.name}</div>
+    `;
+
+    // Click handler to select/switch profile
+    card.addEventListener('click', (e) => {
+      // Ignore if delete button was clicked
+      if (e.target.classList.contains('profile-item-delete-btn')) {
+        e.stopPropagation();
+        handleDeleteProfile(profile.id);
+        return;
+      }
+      
+      // If profile has PIN (all profiles do, default is 0000)
+      promptForPin(profile.id);
+    });
+
+    profileListGrid.appendChild(card);
+  });
+}
+
+function promptForPin(profileId) {
+  const profile = profilesList.find(p => p.id === profileId);
+  if (!profile) return;
+
+  pinTargetProfileId = profileId;
+  if (profilePinTargetName) profilePinTargetName.textContent = profile.name;
+  if (profilePinEntry) {
+    profilePinEntry.value = '';
+    setTimeout(() => profilePinEntry.focus(), 150);
+  }
+  
+  showProfileView('pin');
+}
+
+function showProfileView(viewName) {
+  const views = {
+    select: profileViewSelect,
+    create: profileViewCreate,
+    pin: profileViewPin
+  };
+
+  Object.keys(views).forEach(name => {
+    if (views[name]) {
+      if (name === viewName) {
+        views[name].classList.remove('hidden');
+      } else {
+        views[name].classList.add('hidden');
+      }
+    }
+  });
+}
+
+function showProfileModal() {
+  if (profileModal) {
+    profileModal.classList.remove('hidden');
+    renderProfilesList();
+    showProfileView('select');
+  }
+}
+
+function closeProfileModal() {
+  if (profileModal) {
+    profileModal.classList.add('hidden');
+  }
+  // Clear inputs
+  if (profileNameInput) profileNameInput.value = '';
+  if (profilePinInput) profilePinInput.value = '';
+  if (profilePinEntry) profilePinEntry.value = '';
+  pinTargetProfileId = null;
+}
+
+function handleCreateProfile() {
+  const name = profileNameInput.value.trim();
+  const pin = profilePinInput.value.trim();
+
+  if (!name) {
+    alert('กรุณากรอกชื่อโปรไฟล์ของคุณด้วยนะครับ 😊');
+    return;
+  }
+  if (!pin || pin.length !== 4 || !/^\d+$/.test(pin)) {
+    alert('กรุณากรอกรหัสผ่านเป็นตัวเลข 4 หลักถ้วนครับ 🔑');
+    return;
+  }
+
+  // Create new profile object
+  const newProfileId = 'profile_' + Date.now();
+  const newProfile = {
+    id: newProfileId,
+    name: name,
+    emoji: selectedCreateAvatar,
+    pin: pin
+  };
+
+  profilesList.push(newProfile);
+  saveProfilesRegistry();
+  
+  alert(`สร้างโปรไฟล์ "${name}" สำเร็จแล้ว! ยินดีต้อนรับสู่ก้าวแรกแห่งจิตใจที่สงบครับ ✨`);
+  
+  // Switch to the newly created profile immediately
+  currentProfileId = newProfileId;
+  localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
+  
+  loadStatsFromLocalStorage();
+  updateProfileHeaderUI();
+  renderStatsDashboard();
+  
+  closeProfileModal();
+}
+
+function handleVerifyPin() {
+  const enteredPin = profilePinEntry.value.trim();
+  const profile = profilesList.find(p => p.id === pinTargetProfileId);
+
+  if (!profile) return;
+
+  if (enteredPin === profile.pin) {
+    // Correct PIN! Switch profile
+    currentProfileId = profile.id;
+    localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
+    
+    loadStatsFromLocalStorage();
+    updateProfileHeaderUI();
+    renderStatsDashboard();
+    
+    alert(`เข้าสู่ระบบโปรไฟล์ "${profile.name}" สำเร็จแล้วครับ 🧘`);
+    closeProfileModal();
+  } else {
+    alert('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้งครับ ❌');
+    if (profilePinEntry) {
+      profilePinEntry.value = '';
+      profilePinEntry.focus();
+    }
+  }
+}
+
+function handleDeleteProfile(profileId) {
+  const profile = profilesList.find(p => p.id === profileId);
+  if (!profile) return;
+
+  const enteredPin = prompt(`คุณแน่ใจหรือไม่ที่จะลบโปรไฟล์ "${profile.name}"? ข้อมูลสถิติทั้งหมดจะสูญหายถาวร\n\nกรุณากรอกรหัสผ่าน 4 หลักของโปรไฟล์นี้เพื่อยืนยันการลบ:`);
+  
+  if (enteredPin === null) return; // User cancelled prompt
+
+  if (enteredPin === profile.pin) {
+    // Delete stats from localStorage
+    localStorage.removeItem(`khoun_monk_stats_profile_${profileId}`);
+    
+    // Remove from registry
+    profilesList = profilesList.filter(p => p.id !== profileId);
+    saveProfilesRegistry();
+    
+    alert('ลบโปรไฟล์และสถิติทั้งหมดเรียบร้อยแล้วครับ');
+    
+    // If the active profile was deleted, switch back to default profile
+    if (currentProfileId === profileId) {
+      currentProfileId = 'default';
+      localStorage.setItem('khoun_monk_active_profile_id', currentProfileId);
+      loadStatsFromLocalStorage();
+      updateProfileHeaderUI();
+      renderStatsDashboard();
+    }
+    
+    renderProfilesList();
+    showProfileView('select');
+  } else {
+    alert('รหัสผ่านไม่ถูกต้อง การยืนยันลบล้มเหลว ❌');
+  }
+}
+
+/* ==========================================================================
+   ACHIEVEMENT SHARING MANAGER
+   ========================================================================== */
+
+function generateShareText() {
+  const activeProfile = profilesList.find(p => p.id === currentProfileId) || { name: 'หลวงพี่คูณ', emoji: '🧘' };
+  
+  let shareText = `🕊️ บันทึกความดีและผลปฏิบัติธรรม\n`;
+  shareText += `👤 ผู้ใช้: ${activeProfile.emoji} ${activeProfile.name}\n`;
+  shareText += `🧘 นั่งสมาธิสะสม: ${dbStats.totalMinutes} นาที\n`;
+  shareText += ` Sessions: ${dbStats.sessions} ครั้ง\n`;
+  shareText += `🔥 ความเพียรต่อเนื่อง: ${dbStats.streak} วัน\n`;
+  shareText += `🏅 เหรียญรางวัลที่ปลดล็อก: ${dbStats.unlockedBadges.length} / 5 เหรียญ\n`;
+  
+  if (dbStats.journal.length > 0) {
+    const lastEntry = dbStats.journal[0];
+    let moodEmoji = '😌';
+    let moodLabel = 'สงบ';
+    if (lastEntry.mood === 'peaceful') { moodEmoji = '😇'; moodLabel = 'ผ่องใส'; }
+    else if (lastEntry.mood === 'refreshed') { moodEmoji = '🍃'; moodLabel = 'สดชื่น'; }
+    else if (lastEntry.mood === 'sleepy') { moodEmoji = '🥱'; moodLabel = 'ง่วงนอน'; }
+    else if (lastEntry.mood === 'restless') { moodEmoji = '😟'; moodLabel = 'ฟุ้งซ่าน'; }
+    
+    shareText += `\n📖 สภาวะธรรมล่าสุด (${moodEmoji} ${moodLabel}):\n`;
+    shareText += `"${lastEntry.note || 'กายสงบนิ่ง ใจหยุดเป็นกุศล'}"\n`;
+  }
+  
+  shareText += `\nมาร่วมทำจิตใจให้สงบและผ่องใสด้วยกันได้ที่: ${window.location.origin + window.location.pathname}`;
+  return shareText;
+}
+
+function openShareModal() {
+  if (!shareModal) return;
+  const text = generateShareText();
+  if (sharePreviewText) {
+    sharePreviewText.textContent = text;
+  }
+  shareModal.classList.remove('hidden');
+}
+
+function closeShareModal() {
+  if (shareModal) {
+    shareModal.classList.add('hidden');
+  }
+}
+
+function doNativeShare() {
+  const text = generateShareText();
+  if (navigator.share) {
+    navigator.share({
+      title: 'บันทึกปฏิบัติธรรม - Khoun Monk',
+      text: text,
+      url: window.location.href
+    }).catch(err => {
+      console.warn('Native share failed or cancelled', err);
+    });
+  } else {
+    // Fallback to copy
+    copyShareText();
+  }
+}
+
+function copyShareText() {
+  const text = generateShareText();
+  navigator.clipboard.writeText(text).then(() => {
+    alert('คัดลอกบันทึกความดีลงคลิปบอร์ดแล้ว! นำไปวางส่งใน LINE หรือแชร์ต่อได้ทันทีครับ 😊');
+    closeShareModal();
+  }).catch(err => {
+    console.error('Failed to copy text', err);
+    alert('ไม่สามารถคัดลอกลงคลิปบอร์ดได้ กรุณาคัดลอกจากกล่องข้อความพรีวิวด้วยตนเองครับ');
+  });
 }
