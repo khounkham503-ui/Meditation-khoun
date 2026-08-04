@@ -205,6 +205,8 @@ function cacheDOMElements() {
   } else {
     loadStatsFromLocalStorage().then(() => {
       updateProfileHeaderUI();
+      renderStatsDashboard();
+      displayRandomPraise();
     });
   }
 }
@@ -868,15 +870,18 @@ function calculateStreak(nowDate) {
 }
 
 function checkBadges(sessionMinutes, nowDate) {
+  if (!dbStats.unlockedBadges || !Array.isArray(dbStats.unlockedBadges)) {
+    dbStats.unlockedBadges = [];
+  }
   const unlocked = dbStats.unlockedBadges;
   
   // 1. Beginner: First session
-  if (!unlocked.includes('beginner') && dbStats.sessions >= 1) {
+  if (!unlocked.includes('beginner') && (dbStats.sessions || 0) >= 1) {
     unlocked.push('beginner');
   }
   
   // 2. Streak 3: 3 consecutive days
-  if (!unlocked.includes('streak3') && dbStats.streak >= 3) {
+  if (!unlocked.includes('streak3') && (dbStats.streak || 0) >= 3) {
     unlocked.push('streak3');
   }
   
@@ -892,12 +897,29 @@ function checkBadges(sessionMinutes, nowDate) {
   }
   
   // 5. Peace Master: Cumulative time >= 100 mins
-  if (!unlocked.includes('peacemaster') && dbStats.totalMinutes >= 100) {
+  if (!unlocked.includes('peacemaster') && (dbStats.totalMinutes || 0) >= 100) {
     unlocked.push('peacemaster');
   }
 }
 
 function renderStatsDashboard() {
+  if (!dbStats || typeof dbStats !== 'object') {
+    dbStats = {
+      totalMinutes: 0,
+      sessions: 0,
+      streak: 0,
+      lastDate: null,
+      lastPraise: null,
+      unlockedBadges: [],
+      journal: []
+    };
+  }
+  if (typeof dbStats.totalMinutes !== 'number' || isNaN(dbStats.totalMinutes)) dbStats.totalMinutes = 0;
+  if (typeof dbStats.sessions !== 'number' || isNaN(dbStats.sessions)) dbStats.sessions = 0;
+  if (typeof dbStats.streak !== 'number' || isNaN(dbStats.streak)) dbStats.streak = 0;
+  if (!dbStats.unlockedBadges || !Array.isArray(dbStats.unlockedBadges)) dbStats.unlockedBadges = [];
+  if (!dbStats.journal || !Array.isArray(dbStats.journal)) dbStats.journal = [];
+
   // Update dashboard stats fields
   if (dbStatTotalMinutes) dbStatTotalMinutes.textContent = dbStats.totalMinutes;
   if (dbStatSessions) dbStatSessions.textContent = dbStats.sessions;
@@ -925,11 +947,23 @@ function renderStatsDashboard() {
       dbJournalHistoryList.innerHTML = '<p class="empty-journal-message">ยังไม่มีประวัติบันทึกความดี เขียนบันทึกเพื่อจดสภาวะธรรมก้าวแรกของคุณได้ทางซ้ายมือ</p>';
     } else {
       dbStats.journal.forEach(entry => {
+        if (!entry || typeof entry !== 'object') return;
         const item = document.createElement('div');
         item.className = 'journal-item';
         
-        const dateObj = new Date(entry.date);
-        const formattedDate = `${dateObj.getDate()}/${dateObj.getMonth() + 1}/${dateObj.getFullYear() + 543} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`;
+        let formattedDate = '';
+        if (entry.date) {
+          try {
+            const dateObj = new Date(entry.date);
+            if (!isNaN(dateObj.getTime())) {
+              formattedDate = `${dateObj.getDate()}/${dateObj.getMonth() + 1}/${dateObj.getFullYear() + 543} ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')} น.`;
+            } else {
+              formattedDate = String(entry.date);
+            }
+          } catch (e) {
+            formattedDate = String(entry.date);
+          }
+        }
         
         let moodEmoji = '😌';
         let moodLabel = 'สงบ';
@@ -938,12 +972,13 @@ function renderStatsDashboard() {
         else if (entry.mood === 'sleepy') { moodEmoji = '🥱'; moodLabel = 'ง่วงนอน'; }
         else if (entry.mood === 'restless') { moodEmoji = '😟'; moodLabel = 'ฟุ้งซ่าน'; }
         
-        const typeLabel = entry.minutes > 0 ? `ทำสมาธิ ${entry.minutes} นาที` : 'บันทึกปฏิบัติธรรม';
+        const mins = typeof entry.minutes === 'number' ? entry.minutes : 0;
+        const typeLabel = mins > 0 ? `ทำสมาธิ ${mins} นาที` : 'บันทึกปฏิบัติธรรม';
         
         item.innerHTML = `
           <div class="journal-item-header">
             <span class="journal-item-mood">${moodEmoji} ${moodLabel} (${typeLabel})</span>
-            <span>${formattedDate} น.</span>
+            <span>${formattedDate}</span>
           </div>
           ${entry.note ? `<p class="journal-item-note">"${entry.note}"</p>` : ''}
         `;
@@ -1050,8 +1085,11 @@ async function loadStatsFromLocalStorage() {
       journal: []
     };
   }
-  if (!dbStats.unlockedBadges) dbStats.unlockedBadges = [];
-  if (!dbStats.journal) dbStats.journal = [];
+  if (typeof dbStats.totalMinutes !== 'number' || isNaN(dbStats.totalMinutes)) dbStats.totalMinutes = 0;
+  if (typeof dbStats.sessions !== 'number' || isNaN(dbStats.sessions)) dbStats.sessions = 0;
+  if (typeof dbStats.streak !== 'number' || isNaN(dbStats.streak)) dbStats.streak = 0;
+  if (!dbStats.unlockedBadges || !Array.isArray(dbStats.unlockedBadges)) dbStats.unlockedBadges = [];
+  if (!dbStats.journal || !Array.isArray(dbStats.journal)) dbStats.journal = [];
 }
 
 async function saveStatsToLocalStorage() {
