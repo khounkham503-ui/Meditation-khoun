@@ -67,7 +67,7 @@ let avatarEmojiOptions;
 let selectedCreateAvatar = '🧘';
 
 // Share DOM elements
-let btnShareStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText, btnShareSite;
+let btnShareStats, btnRefreshStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText, btnShareSite;
 
 // Stats & Journal State
 let dbStats = {
@@ -192,6 +192,7 @@ function cacheDOMElements() {
 
   // Cache Share elements
   btnShareStats = document.getElementById('btn-share-stats');
+  btnRefreshStats = document.getElementById('btn-refresh-stats');
   shareModal = document.getElementById('share-modal');
   btnCloseShare = document.getElementById('btn-close-share');
   sharePreviewText = document.getElementById('share-preview-text');
@@ -467,7 +468,10 @@ function setupEventListeners() {
     });
   });
 
-  // --- Sharing Listeners ---
+  // --- Sharing & Refresh Listeners ---
+  if (btnRefreshStats) {
+    btnRefreshStats.addEventListener('click', handleRefreshStats);
+  }
   if (btnShareStats) {
     btnShareStats.addEventListener('click', openShareModal);
   }
@@ -985,6 +989,23 @@ function renderStatsDashboard() {
         dbJournalHistoryList.appendChild(item);
       });
     }
+  }
+}
+
+async function handleRefreshStats() {
+  const icon = document.getElementById('refresh-icon');
+  if (icon) icon.classList.add('spin-icon');
+  
+  try {
+    await loadStatsFromLocalStorage();
+    renderStatsDashboard();
+    displayRandomPraise();
+  } catch (err) {
+    console.error('Failed to refresh stats:', err);
+  } finally {
+    setTimeout(() => {
+      if (icon) icon.classList.remove('spin-icon');
+    }, 600);
   }
 }
 

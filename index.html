@@ -344,9 +344,15 @@
         <div class="stats-overview-card glass-card">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
             <h2>📊 รายงานสถิติการปฏิบัติ</h2>
-            <button id="btn-share-stats" class="btn btn-secondary btn-small btn-icon" style="margin: 0; padding: 6px 12px; font-size: 0.75rem;" title="แชร์ภาพการ์ดสถิติหรือคัดลอกลงคลิปบอร์ด">
-              <span>📤 แชร์ความดี</span>
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button id="btn-refresh-stats" class="btn btn-secondary btn-small btn-icon" style="margin: 0; padding: 6px 12px; font-size: 0.75rem;" title="รีเฟรชสถิติและข้อมูลล่าสุด">
+                <span id="refresh-icon" style="display: inline-block;">🔄</span>
+                <span>รีเฟรช</span>
+              </button>
+              <button id="btn-share-stats" class="btn btn-secondary btn-small btn-icon" style="margin: 0; padding: 6px 12px; font-size: 0.75rem;" title="แชร์ภาพการ์ดสถิติหรือคัดลอกลงคลิปบอร์ด">
+                <span>📤 แชร์ความดี</span>
+              </button>
+            </div>
           </div>
           <div class="stats-overview-grid" style="margin-top: 14px;">
             <div class="stat-box">
