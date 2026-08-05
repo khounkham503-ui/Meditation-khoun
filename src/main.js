@@ -1008,6 +1008,58 @@ function showToast(message) {
   }, 2500);
 }
 
+async function handleResetStats() {
+  const confirmed = confirm('คุณต้องการล้างสถิติการปฏิบัติธรรมทั้งหมดและเริ่มต้นนับ 0 ใหม่ใช่หรือไม่?\n\n(นาทีสะสม จำนวนครั้ง วันต่อเนื่อง เหรียญ และประวัติบันทึกจะถูกล้างทั้งหมด)');
+  if (!confirmed) return;
+
+  const btn = document.getElementById('btn-reset-stats');
+  if (btn) btn.disabled = true;
+
+  // Reset in-memory stats object
+  dbStats = {
+    totalMinutes: 0,
+    sessions: 0,
+    streak: 0,
+    lastDate: null,
+    lastPraise: null,
+    unlockedBadges: [],
+    journal: []
+  };
+
+  // Clear local storage keys
+  localStorage.removeItem('khoun_monk_stats_local');
+  localStorage.removeItem('khoun_monk_stats_profile_default');
+  localStorage.removeItem('khoun_monk_stats');
+  saveStatsToLocalStorage();
+
+  // Reset Supabase Cloud if logged in
+  if (isConfigured && currentUserSession) {
+    try {
+      const userId = currentUserSession.user.id;
+      await supabase.from('profiles').update({
+        total_minutes: 0,
+        sessions: 0,
+        streak: 0,
+        last_date: null,
+        unlocked_badges: []
+      }).eq('id', userId);
+
+      await supabase.from('journals').delete().eq('user_id', userId);
+    } catch (err) {
+      console.error('Failed to reset cloud stats:', err);
+    }
+  }
+
+  // Update UI components
+  updateProfileHeaderUI();
+  renderStatsDashboard();
+  displayRandomPraise('เริ่มต้นเส้นทางปฏิบัติธรรมบทใหม่ ขอให้อนุโมทนาและเจริญในธรรมครับ');
+  showToast('🗑️ ล้างสถิติเรียบร้อยแล้ว เริ่มต้นนับ 0 ใหม่');
+
+  if (btn) btn.disabled = false;
+}
+window.handleResetStats = handleResetStats;
+
 async function handleRefreshStats() {
   const btn = document.getElementById('btn-refresh-stats') || btnRefreshStats;
   const icon = document.getElementById('refresh-icon');
