@@ -67,7 +67,7 @@ let avatarEmojiOptions;
 let selectedCreateAvatar = '🧘';
 
 // Share DOM elements
-let btnShareStats, btnRefreshStats, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText, btnShareSite;
+let btnShareStats, btnRefreshStats, btnShareLine, shareModal, btnCloseShare, sharePreviewText, btnDoNativeShare, btnCopyShareText, btnShareSite;
 
 // Stats & Journal State
 let dbStats = {
@@ -193,6 +193,7 @@ function cacheDOMElements() {
   // Cache Share elements
   btnShareStats = document.getElementById('btn-share-stats');
   btnRefreshStats = document.getElementById('btn-refresh-stats');
+  btnShareLine = document.getElementById('btn-share-line');
   shareModal = document.getElementById('share-modal');
   btnCloseShare = document.getElementById('btn-close-share');
   sharePreviewText = document.getElementById('share-preview-text');
@@ -471,6 +472,9 @@ function setupEventListeners() {
   // --- Sharing & Refresh Listeners ---
   if (btnRefreshStats) {
     btnRefreshStats.addEventListener('click', handleRefreshStats);
+  }
+  if (btnShareLine) {
+    btnShareLine.addEventListener('click', shareToLine);
   }
   if (btnShareStats) {
     btnShareStats.addEventListener('click', openShareModal);
@@ -1520,6 +1524,12 @@ function copyShareText() {
     console.error('Failed to copy text', err);
     alert('ไม่สามารถคัดลอกลงคลิปบอร์ดได้ กรุณาคัดลอกจากกล่องข้อความพรีวิวด้วยตนเองครับ');
   });
+}
+
+function shareToLine() {
+  const text = generateShareText();
+  const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+  window.open(lineUrl, '_blank');
 }
 
 function handleShareSite() {
