@@ -1555,3 +1555,31 @@ function handleShareSite() {
     });
   }
 }
+
+/* ==========================================================================
+   LINE OA CONNECT MODAL HANDLERS
+   ========================================================================== */
+
+function openLineOAModal() {
+  const modal = document.getElementById('line-oa-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeLineOAModal() {
+  const modal = document.getElementById('line-oa-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function copyUserLineKey() {
+  const code = currentUserSession ? currentUserSession.user.id.substring(0, 8).toUpperCase() : 'LOCAL-USER';
+  const text = `เชื่อมต่อ ${code}`;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`📋 คัดลอกข้อความ "${text}" แล้ว! นำไปส่งแชตใน LINE OA ได้เลยครับ`);
+  }).catch(() => {
+    alert(`รหัสเชื่อมต่อของคุณคือ: ${text}`);
+  });
+}
+
+window.openLineOAModal = openLineOAModal;
+window.closeLineOAModal = closeLineOAModal;
+window.copyUserLineKey = copyUserLineKey;
