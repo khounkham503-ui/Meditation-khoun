@@ -993,19 +993,34 @@ function renderStatsDashboard() {
 }
 
 async function handleRefreshStats() {
+  if (!btnRefreshStats) return;
   const icon = document.getElementById('refresh-icon');
+  const refreshText = btnRefreshStats.querySelector('.btn-refresh-text') || btnRefreshStats.querySelector('span:not(#refresh-icon)');
+  
+  btnRefreshStats.disabled = true;
   if (icon) icon.classList.add('spin-icon');
+  if (refreshText) refreshText.textContent = 'กำลังโหลด...';
   
   try {
     await loadStatsFromLocalStorage();
+    
+    // Pick a fresh praise message to give immediate visual feedback
+    const freshPraise = getRandomPraise();
+    dbStats.lastPraise = freshPraise;
+    
     renderStatsDashboard();
-    displayRandomPraise();
+    displayRandomPraise(freshPraise);
+
+    if (refreshText) refreshText.textContent = '✅ อัปเดตแล้ว';
   } catch (err) {
     console.error('Failed to refresh stats:', err);
+    if (refreshText) refreshText.textContent = '❌ ล้มเหลว';
   } finally {
     setTimeout(() => {
       if (icon) icon.classList.remove('spin-icon');
-    }, 600);
+      if (refreshText) refreshText.textContent = 'รีเฟรช';
+      btnRefreshStats.disabled = false;
+    }, 1500);
   }
 }
 

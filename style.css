@@ -739,6 +739,7 @@ body {
 }
 
 .spin-icon {
+  display: inline-block !important;
   animation: spin 0.6s linear infinite;
 }
 
