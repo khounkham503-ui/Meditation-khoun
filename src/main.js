@@ -992,17 +992,34 @@ function renderStatsDashboard() {
   }
 }
 
-async function handleRefreshStats() {
-  if (!btnRefreshStats) return;
-  const icon = document.getElementById('refresh-icon');
-  const refreshText = btnRefreshStats.querySelector('.btn-refresh-text') || btnRefreshStats.querySelector('span:not(#refresh-icon)');
+function showToast(message) {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'app-toast';
+    toast.className = 'toast-notification';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
   
-  btnRefreshStats.disabled = true;
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
+async function handleRefreshStats() {
+  const btn = document.getElementById('btn-refresh-stats') || btnRefreshStats;
+  const icon = document.getElementById('refresh-icon');
+  const refreshText = btn ? (btn.querySelector('.btn-refresh-text') || btn.querySelector('span:not(#refresh-icon)')) : null;
+  
+  if (btn) btn.disabled = true;
   if (icon) icon.classList.add('spin-icon');
   if (refreshText) refreshText.textContent = 'กำลังโหลด...';
   
   try {
     await loadStatsFromLocalStorage();
+    updateProfileHeaderUI();
     
     // Pick a fresh praise message to give immediate visual feedback
     const freshPraise = getRandomPraise();
@@ -1012,17 +1029,20 @@ async function handleRefreshStats() {
     displayRandomPraise(freshPraise);
 
     if (refreshText) refreshText.textContent = '✅ อัปเดตแล้ว';
+    showToast('🔄 อัปเดตสถิติและข้อมูลล่าสุดเรียบร้อยแล้ว');
   } catch (err) {
     console.error('Failed to refresh stats:', err);
     if (refreshText) refreshText.textContent = '❌ ล้มเหลว';
+    showToast('❌ ไม่สามารถโหลดข้อมูลสถิติได้');
   } finally {
     setTimeout(() => {
       if (icon) icon.classList.remove('spin-icon');
       if (refreshText) refreshText.textContent = 'รีเฟรช';
-      btnRefreshStats.disabled = false;
+      if (btn) btn.disabled = false;
     }, 1500);
   }
 }
+window.handleRefreshStats = handleRefreshStats;
 
 async function loadStatsFromLocalStorage() {
   if (isConfigured && currentUserSession) {
