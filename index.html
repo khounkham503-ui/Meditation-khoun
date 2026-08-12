@@ -398,8 +398,39 @@
           </div>
         </div>
 
+        <!-- 3. Weekly Bar Chart Card -->
+        <div class="weekly-chart-card glass-card" style="margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>📊 กราฟสถิติลายสัปดาห์ (นาทีสมาธิ)</h2>
+            <span style="font-size: 0.8rem; color: var(--accent-color);">สัปดาห์นี้</span>
+          </div>
+          <div class="chart-container" style="margin-top: 16px;">
+            <div id="weekly-bar-chart" class="weekly-bar-chart">
+              <!-- Dynamically rendered via main.js renderWeeklyChart() -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Community Leaderboard Card -->
+        <div class="leaderboard-card glass-card" style="margin-top: 20px;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>🏆 10 อันดับผู้เพียรปฏิบัติธรรม (Leaderboard)</h2>
+            <button onclick="handleRefreshLeaderboard()" class="btn btn-secondary btn-small" style="padding: 4px 10px; font-size: 0.75rem;">
+              <span>🔄 อัปเดตอันดับ</span>
+            </button>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 6px 0 14px 0;">ร่วมอนุโมทนาในความเพียรพยายามปฏิบัติธรรมร่วมกันในคลาวด์:</p>
+          
+          <div id="leaderboard-list" class="leaderboard-list">
+            <!-- Dynamically populated from Supabase profiles -->
+            <div style="text-align: center; color: var(--text-secondary); padding: 14px; font-size: 0.85rem;">
+              กำลังโหลดตารางอันดับจาก Supabase Cloud...
+            </div>
+          </div>
+        </div>
+
         <!-- 3. Dhamma Journal History -->
-        <div class="history-card glass-card" style="flex-grow: 1; display: flex; flex-direction: column;">
+        <div class="history-card glass-card" style="flex-grow: 1; display: flex; flex-direction: column; margin-top: 20px;">
           <div class="card-header">
             <h2>📖 สมุดบันทึกสมาธิย้อนหลัง</h2>
           </div>

@@ -1474,4 +1474,149 @@ body.theme-candle {
   color: var(--text-secondary);
 }
 
+/* ==========================================================================
+   WEEKLY BAR CHART & LEADERBOARD STYLES
+   ========================================================================== */
+
+/* 1. Weekly Bar Chart */
+.weekly-bar-chart {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 140px;
+  padding: 10px 0;
+  gap: 8px;
+}
+
+.chart-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar-wrapper {
+  width: 100%;
+  max-width: 32px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px 8px 4px 4px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, var(--accent-color) 0%, rgba(245, 158, 11, 0.3) 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s ease-out;
+  position: relative;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.bar-val-label {
+  font-size: 0.7rem;
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.day-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.chart-column.active .day-label {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+/* 2. Leaderboard Ranks */
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all var(--transition-fast);
+}
+
+.leaderboard-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(245, 158, 11, 0.3);
+  transform: translateX(4px);
+}
+
+.leaderboard-row.rank-1 {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.leaderboard-row.rank-2 {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.15) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.leaderboard-row.rank-3 {
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.leaderboard-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rank-badge {
+  font-size: 1rem;
+  font-weight: 700;
+  width: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.user-name-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-name-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.leaderboard-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.minutes-text {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.streak-text {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
 

@@ -1,6 +1,7 @@
 import { audioManager } from './audio.js';
 import { canvasBackground } from './canvas.js';
 import { supabase, isConfigured, syncLocalStatsToCloud } from './supabase.js';
+import { ambientEngine } from './ambient.js';
 
 // Zen Quotes Presets
 const zenQuotes = [
@@ -466,6 +467,19 @@ function setupEventListeners() {
       opt.classList.add('active');
       selectedCreateAvatar = opt.getAttribute('data-emoji');
     });
+  });
+
+  // --- Ambient Sound Mixer Listeners ---
+  ['rain', 'ocean', 'wind'].forEach(sound => {
+    const slider = document.getElementById(`slider-${sound}`);
+    const valText = document.getElementById(`val-${sound}`);
+    if (slider) {
+      slider.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (valText) valText.textContent = `${val}%`;
+        ambientEngine.setVolume(sound, val / 100);
+      });
+    }
   });
 
   // --- Sharing & Refresh Listeners ---
@@ -990,7 +1004,136 @@ function renderStatsDashboard() {
       });
     }
   }
+
+  // Render Weekly Chart & Leaderboard
+  renderWeeklyChart();
+  fetchAndRenderLeaderboard();
 }
+
+function renderWeeklyChart() {
+  const chartEl = document.getElementById('weekly-bar-chart');
+  if (!chartEl) return;
+
+  const days = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
+  const dailyMins = [0, 0, 0, 0, 0, 0, 0];
+  const now = new Date();
+  const currentDayOfWeek = (now.getDay() + 6) % 7; // Mon=0, Sun=6
+
+  // Aggregate minutes from dbStats.journal
+  dbStats.journal.forEach(entry => {
+    if (entry && entry.date && typeof entry.minutes === 'number') {
+      const d = new Date(entry.date);
+      if (!isNaN(d.getTime())) {
+        const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays < 7) {
+          const dayIdx = (d.getDay() + 6) % 7;
+          dailyMins[dayIdx] += entry.minutes;
+        }
+      }
+    }
+  });
+
+  const maxVal = Math.max(...dailyMins, 30);
+  chartEl.innerHTML = '';
+  days.forEach((day, idx) => {
+    const mins = dailyMins[idx];
+    const heightPercent = Math.min(100, Math.round((mins / maxVal) * 100));
+    const isToday = idx === currentDayOfWeek;
+
+    const col = document.createElement('div');
+    col.className = `chart-column ${isToday ? 'active' : ''}`;
+    col.innerHTML = `
+      <span class="bar-val-label">${mins > 0 ? mins : ''}</span>
+      <div class="bar-wrapper" title="${day}: ${mins} นาที">
+        <div class="bar-fill" style="height: ${Math.max(8, heightPercent)}%;"></div>
+      </div>
+      <span class="day-label">${day}</span>
+    `;
+    chartEl.appendChild(col);
+  });
+}
+
+async function fetchAndRenderLeaderboard() {
+  const container = document.getElementById('leaderboard-list');
+  if (!container) return;
+
+  if (isConfigured) {
+    try {
+      const { data: topProfiles, error } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar, total_minutes, streak')
+        .order('total_minutes', { ascending: false })
+        .limit(10);
+
+      if (!error && topProfiles && topProfiles.length > 0) {
+        container.innerHTML = '';
+        topProfiles.forEach((p, idx) => {
+          const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+          const rowClass = idx < 3 ? `rank-${idx + 1}` : '';
+          
+          const row = document.createElement('div');
+          row.className = `leaderboard-row ${rowClass}`;
+          row.innerHTML = `
+            <div class="leaderboard-left">
+              <span class="rank-badge">${rankBadge}</span>
+              <div class="user-name-box">
+                <span style="font-size: 1.2rem;">${p.avatar || '🧘'}</span>
+                <span class="user-name-text">${p.nickname || 'ผู้ปฏิบัติธรรม'}</span>
+              </div>
+            </div>
+            <div class="leaderboard-right">
+              <span class="minutes-text">${p.total_minutes || 0} นาที</span>
+              <span class="streak-text">🔥 ${p.streak || 0} วันต่อเนื่อง</span>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+        return;
+      }
+    } catch (e) {
+      console.error('Leaderboard error', e);
+    }
+  }
+
+  renderFallbackLeaderboard(container);
+}
+
+function renderFallbackLeaderboard(container) {
+  const myName = currentUserSession ? cloudProfile.name : 'ผู้ปฏิบัติธรรม';
+  const myEmoji = currentUserSession ? cloudProfile.emoji : '🧘';
+
+  const samples = [
+    { name: 'อุบาสกสงบจิต', emoji: '😇', mins: 450, streak: 14 },
+    { name: 'ผู้ตื่นรู้', emoji: '🌅', mins: 320, streak: 9 },
+    { name: 'ศิษย์หลวงพ่อ', emoji: '💎', mins: 210, streak: 7 },
+    { name: myName, emoji: myEmoji, mins: dbStats.totalMinutes, streak: dbStats.streak, isMe: true },
+    { name: 'น้องใจใส', emoji: '🌸', mins: 45, streak: 3 }
+  ];
+
+  container.innerHTML = '';
+  samples.sort((a, b) => b.mins - a.mins).forEach((item, idx) => {
+    const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+    const rowClass = idx < 3 ? `rank-${idx + 1}` : item.isMe ? 'rank-me' : '';
+
+    const row = document.createElement('div');
+    row.className = `leaderboard-row ${rowClass}`;
+    row.innerHTML = `
+      <div class="leaderboard-left">
+        <span class="rank-badge">${rankBadge}</span>
+        <div class="user-name-box">
+          <span style="font-size: 1.2rem;">${item.emoji}</span>
+          <span class="user-name-text">${item.name} ${item.isMe ? ' (คุณ)' : ''}</span>
+        </div>
+      </div>
+      <div class="leaderboard-right">
+        <span class="minutes-text">${item.mins} นาที</span>
+        <span class="streak-text">🔥 ${item.streak} วันต่อเนื่อง</span>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+window.handleRefreshLeaderboard = fetchAndRenderLeaderboard;
 
 function showToast(message) {
   let toast = document.getElementById('app-toast');
