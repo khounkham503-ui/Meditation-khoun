@@ -1364,6 +1364,12 @@ async function handleCloudSignIn() {
     return;
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    alert('กรุณากรอกอีเมลให้ถูกต้องด้วยนะครับ (เช่น khoun@gmail.com) 📧');
+    return;
+  }
+
   try {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -1377,7 +1383,7 @@ async function handleCloudSignIn() {
     }
   } catch (err) {
     console.error('Sign in error', err);
-    alert('เกิดข้อผิดพลาดในการลงชื่อเข้าใช้ กรุณาลองใหม่อีกครั้งครับ');
+    alert('เกิดข้อผิดพลาดในการลงชื่อเข้าใช้: กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตหรืออีเมล/รหัสผ่านอีกครั้งครับ ❌');
   }
 }
 
@@ -1388,6 +1394,12 @@ async function handleCloudSignUp() {
 
   if (!email || !name || !password) {
     alert('กรุณากรอกข้อมูลสมัครสมาชิกให้ครบถ้วนด้วยนะครับ 😊');
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    alert('กรุณากรอกอีเมลให้ถูกต้องตามรูปแบบด้วยนะครับ (เช่น khoun@gmail.com หรือ name@example.com) 📧');
     return;
   }
 
@@ -1431,7 +1443,7 @@ async function handleCloudSignUp() {
     }
   } catch (err) {
     console.error('Sign up error', err);
-    alert('เกิดข้อผิดพลาดในการสมัครสมาชิก กรุณาลองใหม่อีกครั้งครับ');
+    alert(`การสมัครสมาชิกล้มเหลว (${err.message || 'Failed to fetch'}): กรุณากรอกอีเมลจริง (เช่น khoun@gmail.com) หรือตรวจสอบ Project URL ใน Supabase ครับ ❌`);
   }
 }
 
