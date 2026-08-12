@@ -469,6 +469,20 @@ function setupEventListeners() {
     });
   });
 
+  // Edit Profile Avatar Options
+  const editAvatarOptions = document.querySelectorAll('#edit-avatar-emoji-selector .avatar-emoji-option');
+  editAvatarOptions.forEach(opt => {
+    opt.addEventListener('click', () => {
+      editAvatarOptions.forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+    });
+  });
+
+  const btnSaveProfileEdit = document.getElementById('btn-save-profile-edit');
+  if (btnSaveProfileEdit) {
+    btnSaveProfileEdit.addEventListener('click', handleSaveProfileEdit);
+  }
+
   // --- Ambient Sound Mixer Listeners ---
   ['rain', 'ocean', 'wind'].forEach(sound => {
     const slider = document.getElementById(`slider-${sound}`);
@@ -1262,10 +1276,16 @@ async function loadStatsFromLocalStorage() {
         if (profileErr.code !== 'PGRST116') {
           console.error('Error loading profile from Supabase:', profileErr);
         }
+        // Fallback to user_metadata if profile row doesn't exist yet
+        const meta = currentUserSession.user.user_metadata;
+        cloudProfile = {
+          name: meta?.nickname || meta?.name || 'ผู้ปฏิบัติธรรม',
+          emoji: meta?.avatar || '🧘'
+        };
       } else if (profile) {
         cloudProfile = {
-          name: profile.nickname,
-          emoji: profile.avatar
+          name: profile.nickname || 'ผู้ปฏิบัติธรรม',
+          emoji: profile.avatar || '🧘'
         };
         dbStats.totalMinutes = profile.total_minutes || 0;
         dbStats.sessions = profile.sessions || 0;
@@ -1485,6 +1505,19 @@ function showProfileModal() {
       if (authProfileAvatar) authProfileAvatar.textContent = cloudProfile.emoji;
       if (authProfileNickname) authProfileNickname.textContent = cloudProfile.name;
       if (authProfileEmail) authProfileEmail.textContent = currentUserSession.user.email;
+      
+      const editNameInput = document.getElementById('edit-profile-name');
+      if (editNameInput) editNameInput.value = cloudProfile.name;
+
+      const editAvatarOptions = document.querySelectorAll('#edit-avatar-emoji-selector .avatar-emoji-option');
+      editAvatarOptions.forEach(opt => {
+        if (opt.getAttribute('data-emoji') === cloudProfile.emoji) {
+          opt.classList.add('active');
+        } else {
+          opt.classList.remove('active');
+        }
+      });
+
       showAuthView('profile');
     } else {
       showAuthView('signin');
@@ -1507,6 +1540,7 @@ function closeProfileModal() {
 async function handleCloudSignIn() {
   const email = authSigninEmail.value.trim();
   const password = authSigninPassword.value.trim();
+  const btn = document.getElementById('btn-do-signin');
 
   if (!email || !password) {
     alert('กรุณากรอกอีเมลและรหัสผ่านด้วยนะครับ 😊');
@@ -1519,6 +1553,11 @@ async function handleCloudSignIn() {
     return;
   }
 
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ กำลังเข้าสู่ระบบ...</span>';
+  }
+
   try {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -1526,13 +1565,25 @@ async function handleCloudSignIn() {
     });
 
     if (error) {
-      alert(`การเข้าสู่ระบบล้มเหลว: ${error.message} ❌`);
+      let msg = error.message;
+      if (msg.includes('Invalid login credentials')) {
+        msg = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้งครับ ❌';
+      } else if (msg.includes('Email not confirmed')) {
+        msg = 'อีเมลนี้ยังไม่ได้กดกดยืนยันใน Inbox กรุณาเปิดอีเมลและกดยืนยันตัวตนก่อนเข้าสู่ระบบนะครับ 📧';
+      }
+      alert(`การเข้าสู่ระบบล้มเหลว: ${msg}`);
     } else {
+      showToast('🎉 เข้าสู่ระบบสำเร็จ ยินดีต้อนรับครับ!');
       closeProfileModal();
     }
   } catch (err) {
     console.error('Sign in error', err);
     alert('เกิดข้อผิดพลาดในการลงชื่อเข้าใช้: กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตหรืออีเมล/รหัสผ่านอีกครั้งครับ ❌');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🔑 ลงชื่อเข้าใช้งาน</span>';
+    }
   }
 }
 
@@ -1540,6 +1591,7 @@ async function handleCloudSignUp() {
   const email = authSignupEmail.value.trim();
   const name = authSignupName.value.trim();
   const password = authSignupPassword.value.trim();
+  const btn = document.getElementById('btn-do-signup');
 
   if (!email || !name || !password) {
     alert('กรุณากรอกข้อมูลสมัครสมาชิกให้ครบถ้วนด้วยนะครับ 😊');
@@ -1557,14 +1609,29 @@ async function handleCloudSignUp() {
     return;
   }
 
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ กำลังสร้างบัญชี...</span>';
+  }
+
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
-      password
+      password,
+      options: {
+        data: {
+          nickname: name,
+          avatar: selectedCreateAvatar
+        }
+      }
     });
 
     if (error) {
-      alert(`การสมัครสมาชิกล้มเหลว: ${error.message} ❌`);
+      let msg = error.message;
+      if (msg.includes('User already registered')) {
+        msg = 'อีเมลนี้เคยสมัครสมาชิกไปแล้ว กรุณากดปุ่ม "มีบัญชีอยู่แล้ว? เข้าสู่ระบบที่นี่" เพื่อลงชื่อเข้าใช้ครับ 🔑';
+      }
+      alert(`การสมัครสมาชิกล้มเหลว: ${msg}`);
       return;
     }
 
@@ -1572,7 +1639,7 @@ async function handleCloudSignUp() {
       // Create user record in profiles table
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
+        .upsert({
           id: data.user.id,
           nickname: name,
           avatar: selectedCreateAvatar,
@@ -1587,12 +1654,22 @@ async function handleCloudSignUp() {
         console.error('Failed to create cloud profile record:', profileError);
       }
 
-      alert('สมัครบัญชีสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว! ขออนุโมทนาในการก้าวแรกครั้งนี้ครับ ✨');
-      closeProfileModal();
+      if (data.session) {
+        showToast('✨ สมัครบัญชีสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว!');
+        closeProfileModal();
+      } else {
+        alert(`✨ สมัครสมาชิกสำเร็จ!\n\nระบบได้ส่งอีเมลยืนยันตัวตนไปที่ ${email} แล้ว\nกรุณาเปิดอีเมลและกดลิงก์ยืนยันตัวตนก่อนเข้าสู่ระบบนะครับ 📧`);
+        showAuthView('signin');
+      }
     }
   } catch (err) {
     console.error('Sign up error', err);
     alert(`การสมัครสมาชิกล้มเหลว (${err.message || 'Failed to fetch'}): กรุณากรอกอีเมลจริง (เช่น khoun@gmail.com) หรือตรวจสอบ Project URL ใน Supabase ครับ ❌`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>💾 สมัครบัญชีผู้ใช้</span>';
+    }
   }
 }
 
@@ -1602,11 +1679,65 @@ async function handleCloudSignOut() {
     if (error) {
       alert(`การออกจากระบบล้มเหลว: ${error.message} ❌`);
     } else {
-      alert('ออกจากระบบเรียบร้อยแล้วครับ แล้วพบกันใหม่ครับ 🕊️');
+      showToast('🕊️ ออกจากระบบเรียบร้อยแล้ว');
       closeProfileModal();
     }
   } catch (err) {
     console.error('Sign out error', err);
+  }
+}
+
+async function handleSaveProfileEdit() {
+  if (!isConfigured || !currentUserSession) return;
+  const editNameInput = document.getElementById('edit-profile-name');
+  const btn = document.getElementById('btn-save-profile-edit');
+  
+  const newName = editNameInput ? editNameInput.value.trim() : '';
+  if (!newName) {
+    alert('กรุณากรอกชื่อเล่นด้วยนะครับ 😊');
+    return;
+  }
+
+  const activeEmojiOpt = document.querySelector('#edit-avatar-emoji-selector .avatar-emoji-option.active');
+  const newEmoji = activeEmojiOpt ? activeEmojiOpt.getAttribute('data-emoji') : '🧘';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ กำลังบันทึก...</span>';
+  }
+
+  try {
+    const userId = currentUserSession.user.id;
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        nickname: newName,
+        avatar: newEmoji,
+        total_minutes: dbStats.totalMinutes,
+        sessions: dbStats.sessions,
+        streak: dbStats.streak,
+        last_date: dbStats.lastDate,
+        unlocked_badges: dbStats.unlockedBadges
+      });
+
+    if (error) {
+      alert(`ไม่สามารถบันทึกการแก้ไขโปรไฟล์ได้: ${error.message} ❌`);
+    } else {
+      cloudProfile = { name: newName, emoji: newEmoji };
+      updateProfileHeaderUI();
+      renderStatsDashboard();
+      showToast('✨ บันทึกการแก้ไขโปรไฟล์เรียบร้อยแล้ว!');
+      closeProfileModal();
+    }
+  } catch (err) {
+    console.error('Edit profile error', err);
+    alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลครับ ❌');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>💾 บันทึกการแก้ไขโปรไฟล์</span>';
+    }
   }
 }
 
