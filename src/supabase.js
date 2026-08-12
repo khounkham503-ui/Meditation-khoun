@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Read keys from Vite environment variables or default to configured Supabase project
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://afedvvzukvegrpwpipyv.supabase.co';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://afedvvzukveqgrpwipyv.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmZWR2dnp1a3ZlcWdycHdpcHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MDQ5NjcsImV4cCI6MjEwMjA4MDk2N30.6uXMrtKm3Ei6ec9MQH2jER4BcMvRDea5xeKtCPS0Ga0';
 
 let supabase = null;
