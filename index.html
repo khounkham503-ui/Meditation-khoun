@@ -574,60 +574,11 @@
         </div>
 
         <div class="modal-footer" style="margin-top: 20px; padding: 0; display: flex; flex-direction: column; gap: 10px;">
-          <button id="btn-share-line" class="btn btn-primary" style="width: 100%; background: #06C755; border-color: #05b34c;" title="ส่งข้อความผลปฏิบัติธรรมไปยัง LINE">
-            <span>🟢 แชร์สถิติเข้า LINE โดยตรง</span>
-          </button>
-          <button id="btn-do-native-share" class="btn btn-secondary" style="width: 100%;">
-            <span>📱 แชร์ไปยังแอปอื่น (Facebook, Twitter...)</span>
+          <button id="btn-do-native-share" class="btn btn-primary" style="width: 100%;">
+            <span>📱 แชร์บันทึกความดี (Social Media...)</span>
           </button>
           <button id="btn-copy-share-text" class="btn btn-secondary" style="width: 100%;">
             <span>📋 คัดลอกบันทึกไปยังคลิปบอร์ด</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- LINE OA Connection Guide Modal -->
-  <div id="line-oa-modal" class="modal-overlay hidden">
-    <div class="modal-card glass-card" style="max-width: 480px;">
-      <div class="modal-header">
-        <h2>🟢 เชื่อมต่อ LINE Official Account (LINE Bot)</h2>
-        <button onclick="closeLineOAModal()" class="modal-close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p class="modal-instruction">พูดคุย สอบถามวิธีปฏิบัติสมาธิ หรือเช็กนาทีสะสมของคุณผ่าน LINE ได้ตลอด 24 ชม.</p>
-
-        <div style="text-align: center; margin: 16px 0; padding: 18px; background: rgba(0,0,0,0.25); border-radius: 12px; border: 1px dashed rgba(6,199,85,0.35);">
-          <div style="font-size: 2.8rem; margin-bottom: 6px;">🤖 🧘</div>
-          <h3 style="margin: 0; color: #4ade80;">บอทผู้ช่วยปฏิบัติธรรม LINE OA</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">ถามสถิติ ขอคำแนะนำปฏิบัติ และบันทึกผลทาง LINE</p>
-
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 14px;">
-            <a href="https://line.me/R/ti/p/@2010980462" target="_blank" class="btn btn-primary" style="display: inline-block; width: 100%; background: #06C755; border-color: #05b34c; text-decoration: none; text-align: center;">
-              <span>🟢 เพิ่มเพื่อน LINE OA (@2010980462)</span>
-            </a>
-            <a href="https://line.me/R/oaMessage/@2010980462/?สถิติ" target="_blank" class="btn btn-secondary" style="display: inline-block; width: 100%; text-decoration: none; text-align: center; font-size: 0.85rem;">
-              <span>💬 เปิดแชตถามสถิติสมาธิใน LINE</span>
-            </a>
-          </div>
-        </div>
-
-        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-          <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-primary);">💬 คำสั่งที่พิมพ์แชตใน LINE ได้ทันที:</h4>
-          <ul style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.8;">
-            <li><strong>พิมพ์ "สถิติ"</strong> : เช็กนาทีสะสม จำนวนครั้ง และ Streak</li>
-            <li><strong>พิมพ์ "วิธีทำสมาธิ"</strong> : ขอคำแนะนำปรับใจหยุดนิ่ง</li>
-            <li><strong>พิมพ์ "บันทึก 15 นาที"</strong> : บันทึกเวลาทำสมาธิเข้าโปรไฟล์</li>
-          </ul>
-        </div>
-
-        <div style="display: flex; gap: 8px;">
-          <button onclick="copyUserLineKey()" class="btn btn-secondary" style="width: 100%; font-size: 0.8rem;">
-            <span>📋 คัดลอกรหัสเชื่อมโปรไฟล์</span>
-          </button>
-          <button onclick="closeLineOAModal()" class="btn btn-secondary" style="width: 100%; font-size: 0.8rem;">
-            <span>ปิดหน้าต่าง</span>
           </button>
         </div>
       </div>
