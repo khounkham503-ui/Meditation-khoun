@@ -1298,7 +1298,7 @@ function updateProfileHeaderUI() {
   } else {
     // Default fallback header UI
     if (profileActiveEmoji) profileActiveEmoji.textContent = '🧘';
-    if (profileActiveName) profileActiveName.textContent = 'หลวงพี่คูณ (Local)';
+    if (profileActiveName) profileActiveName.textContent = 'ผู้ปฏิบัติธรรม';
   }
 }
 
@@ -1458,7 +1458,7 @@ async function handleCloudSignOut() {
    ========================================================================== */
 
 function generateShareText() {
-  const name = currentUserSession ? cloudProfile.name : 'หลวงพี่คูณ (Local)';
+  const name = currentUserSession ? cloudProfile.name : 'ผู้ปฏิบัติธรรม';
   const emoji = currentUserSession ? cloudProfile.emoji : '🧘';
   
   let shareText = `🕊️ บันทึกความดีและผลปฏิบัติธรรม\n`;
