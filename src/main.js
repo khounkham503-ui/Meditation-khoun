@@ -1065,73 +1065,79 @@ async function fetchAndRenderLeaderboard() {
         .order('total_minutes', { ascending: false })
         .limit(10);
 
-      if (!error && topProfiles && topProfiles.length > 0) {
-        container.innerHTML = '';
-        topProfiles.forEach((p, idx) => {
-          const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
-          const rowClass = idx < 3 ? `rank-${idx + 1}` : '';
-          
-          const row = document.createElement('div');
-          row.className = `leaderboard-row ${rowClass}`;
-          row.innerHTML = `
-            <div class="leaderboard-left">
-              <span class="rank-badge">${rankBadge}</span>
-              <div class="user-name-box">
-                <span style="font-size: 1.2rem;">${p.avatar || '🧘'}</span>
-                <span class="user-name-text">${p.nickname || 'ผู้ปฏิบัติธรรม'}</span>
+      if (!error) {
+        if (topProfiles && topProfiles.length > 0) {
+          container.innerHTML = '';
+          const currentUserId = currentUserSession ? currentUserSession.user.id : null;
+
+          topProfiles.forEach((p, idx) => {
+            const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+            const isMe = currentUserId && p.id === currentUserId;
+            const rowClass = idx < 3 ? `rank-${idx + 1}` : isMe ? 'rank-me' : '';
+            
+            const row = document.createElement('div');
+            row.className = `leaderboard-row ${rowClass}`;
+            if (isMe) {
+              row.style.border = '1px solid var(--accent-color)';
+              row.style.background = 'rgba(245, 158, 11, 0.1)';
+            }
+            row.innerHTML = `
+              <div class="leaderboard-left">
+                <span class="rank-badge">${rankBadge}</span>
+                <div class="user-name-box">
+                  <span style="font-size: 1.2rem;">${p.avatar || '🧘'}</span>
+                  <span class="user-name-text">${p.nickname || 'ผู้ปฏิบัติธรรม'}${isMe ? ' <span style="font-size: 0.75rem; color: var(--accent-color);">(คุณ)</span>' : ''}</span>
+                </div>
               </div>
-            </div>
-            <div class="leaderboard-right">
-              <span class="minutes-text">${p.total_minutes || 0} นาที</span>
-              <span class="streak-text">🔥 ${p.streak || 0} วันต่อเนื่อง</span>
+              <div class="leaderboard-right">
+                <span class="minutes-text">${p.total_minutes || 0} นาที</span>
+                <span class="streak-text">🔥 ${p.streak || 0} วันต่อเนื่อง</span>
+              </div>
+            `;
+            container.appendChild(row);
+          });
+          return;
+        } else {
+          container.innerHTML = `
+            <div style="text-align: center; color: var(--text-secondary); padding: 24px 14px; font-size: 0.85rem;">
+              🌱 ยังไม่มีบัญชีผู้ปฏิบัติธรรมในระบบ<br>
+              กดปุ่ม <strong style="color: var(--accent-color);">🔑 Log in</strong> ด้านบนเพื่อสมัครสมาชิกและเป็นคนแรกในตารางอันดับ!
             </div>
           `;
-          container.appendChild(row);
-        });
-        return;
+          return;
+        }
       }
     } catch (e) {
-      console.error('Leaderboard error', e);
+      console.error('Leaderboard fetch error', e);
     }
   }
 
-  renderFallbackLeaderboard(container);
-}
-
-function renderFallbackLeaderboard(container) {
-  const myName = currentUserSession ? cloudProfile.name : 'ผู้ปฏิบัติธรรม';
-  const myEmoji = currentUserSession ? cloudProfile.emoji : '🧘';
-
-  const samples = [
-    { name: 'อุบาสกสงบจิต', emoji: '😇', mins: 450, streak: 14 },
-    { name: 'ผู้ตื่นรู้', emoji: '🌅', mins: 320, streak: 9 },
-    { name: 'ศิษย์หลวงพ่อ', emoji: '💎', mins: 210, streak: 7 },
-    { name: myName, emoji: myEmoji, mins: dbStats.totalMinutes, streak: dbStats.streak, isMe: true },
-    { name: 'น้องใจใส', emoji: '🌸', mins: 45, streak: 3 }
-  ];
-
-  container.innerHTML = '';
-  samples.sort((a, b) => b.mins - a.mins).forEach((item, idx) => {
-    const rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
-    const rowClass = idx < 3 ? `rank-${idx + 1}` : item.isMe ? 'rank-me' : '';
-
-    const row = document.createElement('div');
-    row.className = `leaderboard-row ${rowClass}`;
-    row.innerHTML = `
-      <div class="leaderboard-left">
-        <span class="rank-badge">${rankBadge}</span>
-        <div class="user-name-box">
-          <span style="font-size: 1.2rem;">${item.emoji}</span>
-          <span class="user-name-text">${item.name} ${item.isMe ? ' (คุณ)' : ''}</span>
+  // Fallback when Supabase is not connected
+  if (currentUserSession) {
+    const myName = cloudProfile.name || 'ผู้ปฏิบัติธรรม';
+    const myEmoji = cloudProfile.emoji || '🧘';
+    container.innerHTML = `
+      <div class="leaderboard-row rank-1" style="border: 1px solid var(--accent-color); background: rgba(245, 158, 11, 0.1);">
+        <div class="leaderboard-left">
+          <span class="rank-badge">🥇</span>
+          <div class="user-name-box">
+            <span style="font-size: 1.2rem;">${myEmoji}</span>
+            <span class="user-name-text">${myName} <span style="font-size: 0.75rem; color: var(--accent-color);">(คุณ)</span></span>
+          </div>
+        </div>
+        <div class="leaderboard-right">
+          <span class="minutes-text">${dbStats.totalMinutes} นาที</span>
+          <span class="streak-text">🔥 ${dbStats.streak} วันต่อเนื่อง</span>
         </div>
       </div>
-      <div class="leaderboard-right">
-        <span class="minutes-text">${item.mins} นาที</span>
-        <span class="streak-text">🔥 ${item.streak} วันต่อเนื่อง</span>
+    `;
+  } else {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-secondary); padding: 24px 14px; font-size: 0.85rem;">
+        🔒 กรุณากดปุ่ม <strong style="color: var(--accent-color);">🔑 Log in</strong> ด้านบนเพื่อลงชื่อเข้าใช้และบันทึกอันดับของคุณขึ้นตารางครับ!
       </div>
     `;
-    container.appendChild(row);
-  });
+  }
 }
 window.handleRefreshLeaderboard = fetchAndRenderLeaderboard;
 
