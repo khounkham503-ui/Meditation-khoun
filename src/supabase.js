@@ -1,22 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Read keys from Vite environment variables (e.g. from a .env file)
-// Or you can hardcode them here if you prefer.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+// Read keys from Vite environment variables or default to configured Supabase project
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://afedvvzukvegrpwpipyv.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmZWR2dnp1a3ZlcWdycHdpcHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MDQ5NjcsImV4cCI6MjEwMjA4MDk2N30.6uXMrtKm3Ei6ec9MQH2jER4BcMvRDea5xeKtCPS0Ga0';
 
 let supabase = null;
 let isConfigured = false;
 
-if (supabaseUrl && supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseAnonKey && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY') {
+if (supabaseUrl && supabaseAnonKey) {
   try {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
     isConfigured = true;
   } catch (err) {
     console.error('Failed to initialize Supabase client', err);
   }
-} else {
-  console.warn('Supabase is not configured yet. Using local fallback mode. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in a .env file.');
 }
 
 export { supabase, isConfigured };
