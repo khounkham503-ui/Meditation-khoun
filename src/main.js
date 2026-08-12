@@ -1289,12 +1289,12 @@ function initSupabaseAuth() {
 
 function updateProfileHeaderUI() {
   if (isConfigured && currentUserSession) {
-    if (profileActiveEmoji) profileActiveEmoji.textContent = cloudProfile.emoji;
-    if (profileActiveName) profileActiveName.textContent = cloudProfile.name;
+    if (profileActiveEmoji) profileActiveEmoji.textContent = cloudProfile.emoji || '🧘';
+    if (profileActiveName) profileActiveName.textContent = cloudProfile.name || 'ผู้ปฏิบัติธรรม';
   } else {
-    // Default fallback header UI
-    if (profileActiveEmoji) profileActiveEmoji.textContent = '🧘';
-    if (profileActiveName) profileActiveName.textContent = 'ผู้ปฏิบัติธรรม';
+    // When NOT logged in -> Show Log in button
+    if (profileActiveEmoji) profileActiveEmoji.textContent = '🔑';
+    if (profileActiveName) profileActiveName.textContent = 'Log in';
   }
 }
 
