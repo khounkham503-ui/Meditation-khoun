@@ -493,32 +493,66 @@
 
   <!-- Profile Switcher & Register Modal (Supabase Cloud Auth) -->
   <div id="profile-modal" class="modal-overlay hidden">
-    <div class="modal-card profile-card glass-card">
-      <div class="modal-header">
+    <div class="modal-card profile-card glass-card card-3d-sign-in" id="sign-in-card-3d">
+      
+      <!-- Traveling Light Beam Overlay -->
+      <div class="card-beam-container">
+        <div class="card-beam beam-top"></div>
+        <div class="card-beam beam-right"></div>
+        <div class="card-beam beam-bottom"></div>
+        <div class="card-beam beam-left"></div>
+      </div>
+
+      <div class="modal-header" style="position: relative; z-index: 10;">
         <h2 id="profile-modal-title">👤 บัญชีผู้ใช้งานระบบคลาวด์</h2>
         <button id="btn-close-profile" class="modal-close-btn">&times;</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="position: relative; z-index: 10;">
         
         <!-- View 1: Sign In View -->
         <div id="auth-view-signin" class="auth-view">
           <p class="modal-instruction">ลงชื่อเข้าใช้เพื่อซิงก์ข้อมูลสถิติและการจดบันทึกของคุณข้ามอุปกรณ์:</p>
           
-          <div class="form-group" style="margin-bottom: 12px;">
+          <div class="form-group input-group-icon" style="margin-bottom: 14px;">
             <label for="auth-signin-email" class="journal-label">อีเมลผู้ใช้งาน (Email):</label>
-            <input type="email" id="auth-signin-email" class="input-custom" placeholder="name@example.com">
+            <div class="input-wrapper-3d">
+              <span class="input-icon">✉️</span>
+              <input type="email" id="auth-signin-email" class="input-custom input-3d" placeholder="name@example.com">
+            </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 16px;">
+          <div class="form-group input-group-icon" style="margin-bottom: 16px;">
             <label for="auth-signin-password" class="journal-label">รหัสผ่าน (Password):</label>
-            <input type="password" id="auth-signin-password" class="input-custom" placeholder="ป้อนรหัสผ่านของคุณ...">
+            <div class="input-wrapper-3d">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="auth-signin-password" class="input-custom input-3d" placeholder="ป้อนรหัสผ่านของคุณ...">
+              <button type="button" class="btn-toggle-eye" id="btn-toggle-signin-pwd" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+            </div>
+          </div>
+
+          <div class="auth-options-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 0.8rem; color: var(--text-secondary);">
+            <label class="remember-me-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+              <input type="checkbox" id="remember-me" class="checkbox-custom" checked>
+              <span>จำฉันไว้ในระบบ</span>
+            </label>
+            <a href="#" id="link-forgot-pwd" style="color: var(--accent-color); text-decoration: none;">ลืมรหัสผ่าน?</a>
           </div>
 
           <div class="modal-footer" style="padding: 0; display: flex; flex-direction: column; gap: 10px;">
-            <button id="btn-do-signin" class="btn btn-primary" style="width: 100%;">
+            <button id="btn-do-signin" class="btn btn-primary btn-3d-glow" style="width: 100%;">
               <span>🔑 ลงชื่อเข้าใช้งาน</span>
             </button>
-            <button id="btn-switch-to-signup" class="btn btn-secondary" style="width: 100%;">
+            
+            <div class="divider-or">
+              <span>หรือ</span>
+            </div>
+
+            <button id="btn-do-google-signin" type="button" class="btn btn-secondary btn-google" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(255,255,255,0.06);">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/></svg>
+              <span>เข้าสู่ระบบด้วย Google</span>
+            </button>
+
+            <button id="btn-switch-to-signup" class="btn btn-secondary" style="width: 100%; margin-top: 4px;">
               <span>✨ ยังไม่มีบัญชี? สมัครใช้งานใหม่</span>
             </button>
           </div>
@@ -528,14 +562,20 @@
         <div id="auth-view-signup" class="auth-view hidden">
           <p class="modal-instruction">สมัครบัญชีสมาธิเพื่อจัดเก็บสถิติธรรมะของคุณแบบถาวร:</p>
           
-          <div class="form-group" style="margin-bottom: 12px;">
+          <div class="form-group input-group-icon" style="margin-bottom: 12px;">
             <label for="auth-signup-email" class="journal-label">อีเมลสมัครใช้งาน (Email):</label>
-            <input type="email" id="auth-signup-email" class="input-custom" placeholder="name@example.com">
+            <div class="input-wrapper-3d">
+              <span class="input-icon">✉️</span>
+              <input type="email" id="auth-signup-email" class="input-custom input-3d" placeholder="name@example.com">
+            </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 12px;">
+          <div class="form-group input-group-icon" style="margin-bottom: 12px;">
             <label for="auth-signup-name" class="journal-label">ชื่อเล่น / นามปากกา:</label>
-            <input type="text" id="auth-signup-name" class="input-custom" placeholder="เช่น ผู้ปฏิบัติธรรม, น้องสงบ..." maxlength="15">
+            <div class="input-wrapper-3d">
+              <span class="input-icon">👤</span>
+              <input type="text" id="auth-signup-name" class="input-custom input-3d" placeholder="เช่น ผู้ปฏิบัติธรรม, น้องสงบ..." maxlength="15">
+            </div>
           </div>
 
           <div class="form-group" style="margin-bottom: 12px;">
@@ -552,13 +592,17 @@
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 16px;">
+          <div class="form-group input-group-icon" style="margin-bottom: 16px;">
             <label for="auth-signup-password" class="journal-label">รหัสผ่าน (Password - อย่างน้อย 6 ตัวอักษร):</label>
-            <input type="password" id="auth-signup-password" class="input-custom" placeholder="ตั้งรหัสผ่านของคุณ...">
+            <div class="input-wrapper-3d">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="auth-signup-password" class="input-custom input-3d" placeholder="ตั้งรหัสผ่านของคุณ...">
+              <button type="button" class="btn-toggle-eye" id="btn-toggle-signup-pwd" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+            </div>
           </div>
 
           <div class="modal-footer" style="padding: 0; display: flex; flex-direction: column; gap: 10px;">
-            <button id="btn-do-signup" class="btn btn-primary" style="width: 100%;">
+            <button id="btn-do-signup" class="btn btn-primary btn-3d-glow" style="width: 100%;">
               <span>💾 สมัครบัญชีผู้ใช้</span>
             </button>
             <button id="btn-switch-to-signin" class="btn btn-secondary" style="width: 100%;">

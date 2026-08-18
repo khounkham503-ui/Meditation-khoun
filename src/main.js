@@ -483,6 +483,47 @@ function setupEventListeners() {
     btnSaveProfileEdit.addEventListener('click', handleSaveProfileEdit);
   }
 
+  // --- 3D Glass Card Motion & Eye Toggle Listeners ---
+  const card3d = document.getElementById('sign-in-card-3d');
+  if (card3d) {
+    card3d.addEventListener('mousemove', (e) => {
+      const rect = card3d.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      const rotateX = (y / (rect.height / 2)) * -8;
+      const rotateY = (x / (rect.width / 2)) * 8;
+      card3d.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+    card3d.addEventListener('mouseleave', () => {
+      card3d.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+    });
+  }
+
+  const toggleSigninPwd = document.getElementById('btn-toggle-signin-pwd');
+  const signinPwdInput = document.getElementById('auth-signin-password');
+  if (toggleSigninPwd && signinPwdInput) {
+    toggleSigninPwd.addEventListener('click', () => {
+      const isPwd = signinPwdInput.type === 'password';
+      signinPwdInput.type = isPwd ? 'text' : 'password';
+      toggleSigninPwd.textContent = isPwd ? '🙈' : '👁️';
+    });
+  }
+
+  const toggleSignupPwd = document.getElementById('btn-toggle-signup-pwd');
+  const signupPwdInput = document.getElementById('auth-signup-password');
+  if (toggleSignupPwd && signupPwdInput) {
+    toggleSignupPwd.addEventListener('click', () => {
+      const isPwd = signupPwdInput.type === 'password';
+      signupPwdInput.type = isPwd ? 'text' : 'password';
+      toggleSignupPwd.textContent = isPwd ? '🙈' : '👁️';
+    });
+  }
+
+  const btnGoogle = document.getElementById('btn-do-google-signin');
+  if (btnGoogle) {
+    btnGoogle.addEventListener('click', handleGoogleSignIn);
+  }
+
   // --- Ambient Sound Mixer Listeners ---
   ['rain', 'ocean', 'wind'].forEach(sound => {
     const slider = document.getElementById(`slider-${sound}`);
@@ -1584,6 +1625,24 @@ async function handleCloudSignIn() {
       btn.disabled = false;
       btn.innerHTML = '<span>🔑 ลงชื่อเข้าใช้งาน</span>';
     }
+  }
+}
+
+async function handleGoogleSignIn() {
+  if (!isConfigured) return;
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.href
+      }
+    });
+    if (error) {
+      alert(`การเข้าสู่ระบบด้วย Google ล้มเหลว: ${error.message} ❌`);
+    }
+  } catch (err) {
+    console.error('Google sign in error', err);
+    alert('เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sign In ❌');
   }
 }
 
