@@ -1725,11 +1725,26 @@ async function handleCloudSignUp() {
       }
 
       if (data.session) {
-        showToast('✨ สมัครบัญชีสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว!');
+        showToast(`✨ สมัครบัญชีสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว! ยินดีต้อนรับคุณ ${name} 🧘`);
         closeProfileModal();
       } else {
-        alert(`✨ สมัครสมาชิกสำเร็จ!\n\nระบบได้ส่งอีเมลยืนยันตัวตนไปที่ ${email} แล้ว\nกรุณาเปิดอีเมลและกดลิงก์ยืนยันตัวตนก่อนเข้าสู่ระบบนะครับ 📧`);
-        showAuthView('signin');
+        // Attempt instant auto-login immediately after sign up
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (signInData && signInData.session) {
+          showToast(`✨ สมัครบัญชีสำเร็จและเข้าสู่ระบบเรียบร้อยแล้ว! ยินดีต้อนรับคุณ ${name} 🧘`);
+          closeProfileModal();
+        } else {
+          let extraGuide = '';
+          if (signInErr && signInErr.message.includes('Email not confirmed')) {
+            extraGuide = '\n\n⚙️ วิธีตั้งค่าให้สมัครปุ๊บเข้าใช้งานได้เลยทันที (ไม่ต้องเช็กอีเมล):\n1. ไปที่ Supabase Dashboard (supabase.com) -> เลือกโปรเจกต์ของคุณ\n2. ไปที่ Authentication -> Providers -> กดเลือก Email\n3. ปิดสวิตช์ (Uncheck) "Confirm email" -> กด Save';
+          }
+          alert(`✨ สมัครสมาชิกสำเร็จ!${extraGuide}\n\nในตอนนี้ท่านสามารถเข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่คุณตั้งไว้ได้เลยครับ 🔑`);
+          showAuthView('signin');
+        }
       }
     }
   } catch (err) {
