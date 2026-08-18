@@ -1630,19 +1630,30 @@ async function handleCloudSignIn() {
 
 async function handleGoogleSignIn() {
   if (!isConfigured) return;
+  const btn = document.getElementById('btn-do-google-signin');
+  if (btn) btn.disabled = true;
+
   try {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.href
+        redirectTo: window.location.origin + window.location.pathname
       }
     });
     if (error) {
-      alert(`การเข้าสู่ระบบด้วย Google ล้มเหลว: ${error.message} ❌`);
+      console.error('Google OAuth Error:', error);
+      let msg = error.message;
+      if (msg.includes('provider is not enabled') || error.code === 'validation_failed') {
+        alert('⚙️ การเข้าสู่ระบบด้วย Google ยังไม่ได้กดเปิดใช้งานใน Supabase Dashboard ครับ\n\nวิธีเปิดใช้งานง่ายๆ:\n1. ไปที่ Supabase Dashboard (supabase.com) -> เลือกโปรเจกต์ของคุณ\n2. ไปที่เมนู Authentication -> Providers -> กดเลือก Google -> สวิตช์เปิด Enable\n\n💡 ในระหว่างนี้ ท่านสามารถกดสมัครสมาชิก/เข้าสู่ระบบด้วย "อีเมล + รหัสผ่าน" ได้ทันทีและใช้งานได้ 100% ครับ! 😊');
+      } else {
+        alert(`การเข้าสู่ระบบด้วย Google ล้มเหลว: ${msg} ❌`);
+      }
     }
   } catch (err) {
     console.error('Google sign in error', err);
     alert('เกิดข้อผิดพลาดในการเชื่อมต่อ Google Sign In ❌');
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
