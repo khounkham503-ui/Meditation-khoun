@@ -231,18 +231,19 @@ function initSparklesParticleCanvas() {
   });
 
   const particles = [];
-  const particleCount = Math.floor(Math.min(width, 1200) / 8);
+  const particleCount = Math.floor(Math.min(width, 1400) / 6);
+  const colors = ['#ffffff', '#ffffff', '#f59e0b', '#38bdf8', '#818cf8', '#e9d5ff'];
 
   for (let i = 0; i < particleCount; i++) {
     particles.push({
       x: Math.random() * width,
       y: Math.random() * height,
-      size: Math.random() * 2 + 0.5,
-      speedX: (Math.random() - 0.5) * 0.4,
-      speedY: (Math.random() - 0.5) * 0.4 - 0.1,
-      opacity: Math.random(),
-      opacitySpeed: Math.random() * 0.02 + 0.005,
-      color: Math.random() > 0.3 ? '#ffffff' : '#f59e0b'
+      size: Math.random() * 2.8 + 0.6,
+      speedX: (Math.random() - 0.5) * 0.6,
+      speedY: (Math.random() - 0.5) * 0.6 - 0.15,
+      opacity: Math.random() * 0.8 + 0.2,
+      opacitySpeed: (Math.random() * 0.025 + 0.008) * (Math.random() > 0.5 ? 1 : -1),
+      color: colors[Math.floor(Math.random() * colors.length)]
     });
   }
 
@@ -253,8 +254,12 @@ function initSparklesParticleCanvas() {
       p.y += p.speedY;
       p.opacity += p.opacitySpeed;
 
-      if (p.opacity >= 1 || p.opacity <= 0.1) {
-        p.opacitySpeed = -p.opacitySpeed;
+      if (p.opacity >= 1) {
+        p.opacity = 1;
+        p.opacitySpeed = -Math.abs(p.opacitySpeed);
+      } else if (p.opacity <= 0.15) {
+        p.opacity = 0.15;
+        p.opacitySpeed = Math.abs(p.opacitySpeed);
       }
 
       if (p.x < 0) p.x = width;
@@ -263,8 +268,8 @@ function initSparklesParticleCanvas() {
       if (p.y > height) p.y = 0;
 
       ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, p.opacity));
-      ctx.shadowBlur = 6;
+      ctx.globalAlpha = Math.max(0.1, Math.min(1, p.opacity));
+      ctx.shadowBlur = 10;
       ctx.shadowColor = p.color;
       ctx.fillStyle = p.color;
       ctx.beginPath();

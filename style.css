@@ -1823,7 +1823,7 @@ body.theme-candle {
   transform: translateY(-1px);
 }
 
-/* Sparkles Floating Particles Background */
+/* Sparkles Floating Particles Background & Start Overlay Styling */
 .sparkles-background {
   position: fixed;
   inset: 0;
@@ -1831,7 +1831,82 @@ body.theme-candle {
   height: 100vh;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.85;
+  opacity: 0.95;
+}
+
+.sparkles-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.sparkles-title {
+  font-size: 3.8rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 60%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px rgba(255, 255, 255, 0.25);
+  margin-bottom: 8px !important;
+}
+
+.glow-pulse {
+  animation: floatPulse 3s ease-in-out infinite alternate;
+  color: var(--accent-color);
+  filter: drop-shadow(0 0 15px var(--accent-color));
+}
+
+@keyframes floatPulse {
+  0% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 10px var(--accent-color)); }
+  100% { transform: translateY(-6px) scale(1.04); filter: drop-shadow(0 0 25px var(--accent-color)); }
+}
+
+.sparkles-gradient-wrapper {
+  position: relative;
+  width: 380px;
+  height: 20px;
+  margin: 4px 0 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sparkles-line-1 {
+  position: absolute;
+  top: 0;
+  width: 75%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #6366f1, transparent);
+  filter: blur(2px);
+}
+
+.sparkles-line-2 {
+  position: absolute;
+  top: 0;
+  width: 75%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #818cf8, transparent);
+}
+
+.sparkles-line-3 {
+  position: absolute;
+  top: 0;
+  width: 25%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+  filter: blur(3px);
+}
+
+.sparkles-line-4 {
+  position: absolute;
+  top: 0;
+  width: 25%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
 }
 
 
