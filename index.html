@@ -65,6 +65,9 @@
           <button class="nav-btn" data-tab="stats" id="nav-btn-stats">
             <span>📊 บันทึกธรรม & สถิติ</span>
           </button>
+          <button class="nav-btn" data-tab="game" id="nav-btn-game">
+            <span>🎮 เกมฝึกสมาธิ</span>
+          </button>
         </nav>
       </div>
 
@@ -446,6 +449,81 @@
           </div>
           <div id="db-journal-history-list" class="journal-history-list" style="margin-top: 14px; max-height: 280px; overflow-y: auto;">
             <p class="empty-journal-message">ยังไม่มีประวัติบันทึกความดี เขียนบันทึกเพื่อจดสภาวะธรรมก้าวแรกของคุณได้ทางซ้ายมือ</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- TAB VIEW 3: ZEN MEDITATION GAMES -->
+  <div id="view-game" class="tab-view hidden">
+    <main class="app-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+      <!-- Left Game: Zen Droplet & Breath Sync -->
+      <section class="section-left glass-card" style="display: flex; flex-direction: column;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>🌸 เกมปล่อยวางหยดน้ำสมาธิ (Droplet Sync)</h2>
+          <div style="font-size: 0.85rem; color: var(--accent-color); font-weight: 600;">
+            คะแนนสมาธิ: <span id="droplet-score">0</span>
+          </div>
+        </div>
+
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          ฝึกสติและความจดจ่อ: หายใจเข้า-ออกลึกๆ และกดปุ่มเพื่อสร้างวงคลื่นสมาธิให้รับหยดน้ำลงสู่ใจกลางดอกบัวพอดี
+        </p>
+
+        <div style="position: relative; width: 100%; height: 340px; background: rgba(0, 0, 0, 0.25); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.08);">
+          <canvas id="droplet-game-canvas" style="width: 100%; height: 100%; display: block; cursor: pointer;"></canvas>
+          <div id="droplet-game-overlay-msg" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.82); backdrop-filter: blur(4px); transition: opacity 0.3s;">
+            <span style="font-size: 2.5rem; margin-bottom: 8px;">💧</span>
+            <h3 style="font-size: 1.2rem; color: #fff; margin-bottom: 4px;">เกมปล่อยวางหยดน้ำสมาธิ</h3>
+            <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 14px; text-align: center; padding: 0 20px;">
+              กดเริ่มเพื่อฝึกสมาธิ ผ่อนคลายไปกับเสียงระฆังแก้วกังสดาลเมื่อคลื่นสมาธิกระทบหยดน้ำ
+            </p>
+            <button id="btn-start-droplet-game" class="btn btn-primary btn-3d-glow">
+              <span>▶️ เริ่มเล่นเกมสมาธิ</span>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button id="btn-trigger-ripple" class="btn btn-primary" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #6366f1, #8b5cf6);" disabled>
+            <span>🌊 สัมผัสสร้างวงคลื่นสมาธิ (Spacebar)</span>
+          </button>
+          <button id="btn-reset-droplet-game" class="btn btn-secondary" style="width: 90px;">
+            <span>🔄 เริ่มใหม่</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Game: Interactive Zen Sand & Stone Garden -->
+      <section class="section-right glass-card" style="display: flex; flex-direction: column;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>🍃 สวนหินทรายเซน (Zen Sand Garden)</h2>
+          <button id="btn-rake-sand" class="btn btn-secondary btn-small" style="padding: 4px 10px; font-size: 0.75rem;">
+            <span>🧹 เกลาหน้าทราย</span>
+          </button>
+        </div>
+
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px;">
+          ลากเมาส์วาดคลื่นทรายเซนเพื่อทำสมาธิ เลือกวางหินสมาธิหรือดอกบัวเพื่อสร้างความสงบตามใจคุณ
+        </p>
+
+        <div style="position: relative; width: 100%; height: 340px; background: #23201d; border-radius: 16px; overflow: hidden; border: 1px solid rgba(245, 158, 11, 0.25); box-shadow: inset 0 0 20px rgba(0,0,0,0.5);">
+          <canvas id="zen-garden-canvas" style="width: 100%; height: 100%; display: block; cursor: crosshair;"></canvas>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; background: rgba(255,255,255,0.03); padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">เลือกอุปกรณ์ตกแต่ง:</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="zen-item-btn active" data-item="wave" style="padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; font-size: 0.8rem;">
+              🌊 ลายคลื่นทราย
+            </button>
+            <button class="zen-item-btn" data-item="stone" style="padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 0.8rem;">
+              🪨 วางหินเซน
+            </button>
+            <button class="zen-item-btn" data-item="lotus" style="padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 0.8rem;">
+              🌸 ปลูกดอกบัว
+            </button>
           </div>
         </div>
       </section>

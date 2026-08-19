@@ -468,6 +468,9 @@ function setupEventListeners() {
       if (targetTab === 'stats') {
         renderStatsDashboard();
         displayRandomPraise();
+        loadLeaderboard();
+      } else if (targetTab === 'game') {
+        setupZenGamesOnce();
       }
     });
   });
@@ -2091,5 +2094,465 @@ function handleShareSite() {
       console.error('Failed to copy share link', err);
       alert('ไม่สามารถคัดลอกลิงก์ได้โดยอัตโนมัติ คุณสามารถคัดลอก URL หน้าเว็บส่งแชร์ต่อได้ทันทีครับ');
     });
+  }
+}
+
+/* ==========================================================================
+   ZEN MEDITATION GAMES ENGINE (Droplet Sync & Zen Sand Garden)
+   ========================================================================== */
+
+let zenGamesInitialized = false;
+
+function setupZenGamesOnce() {
+  if (zenGamesInitialized) return;
+  zenGamesInitialized = true;
+  initDropletGame();
+  initZenGardenGame();
+}
+
+function playZenChimeSound() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    if (!window.zenAudioCtx) window.zenAudioCtx = new AudioCtx();
+    const ctx = window.zenAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    const freqs = [528, 639, 741, 852, 963];
+    const freq = freqs[Math.floor(Math.random() * freqs.length)];
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, ctx.currentTime + 0.8);
+    
+    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.6);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start();
+    osc.stop(ctx.currentTime + 1.6);
+  } catch(e) {
+    console.log('Audio chime not supported');
+  }
+}
+
+// --------------------------------------------------------------------------
+// Game 1: Zen Droplet & Ripple Breath Sync
+// --------------------------------------------------------------------------
+function initDropletGame() {
+  const canvas = document.getElementById('droplet-game-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  let width = canvas.width = canvas.parentElement ? canvas.parentElement.clientWidth : 400;
+  let height = canvas.height = canvas.parentElement ? canvas.parentElement.clientHeight : 340;
+
+  window.addEventListener('resize', () => {
+    if (canvas.parentElement) {
+      width = canvas.width = canvas.parentElement.clientWidth;
+      height = canvas.height = canvas.parentElement.clientHeight;
+    }
+  });
+
+  const overlayMsg = document.getElementById('droplet-game-overlay-msg');
+  const btnStart = document.getElementById('btn-start-droplet-game');
+  const btnTrigger = document.getElementById('btn-trigger-ripple');
+  const btnReset = document.getElementById('btn-reset-droplet-game');
+  const scoreEl = document.getElementById('droplet-score');
+
+  let score = 0;
+  let isRunning = false;
+
+  const lotusPos = { x: width / 2, y: height - 35 };
+  let droplets = [];
+  let ripples = [];
+  let sparkles = [];
+  let scorePopups = [];
+  let lotusPulseScale = 1.0;
+
+  function spawnDroplet() {
+    droplets.push({
+      x: width / 2 + (Math.random() - 0.5) * (width * 0.4),
+      y: -20,
+      radius: Math.random() * 4 + 7,
+      speed: Math.random() * 0.8 + 1.1,
+      color: '#38bdf8'
+    });
+  }
+
+  function triggerRipple() {
+    if (!isRunning) return;
+    ripples.push({
+      x: width / 2,
+      y: height - 35,
+      radius: 5,
+      maxRadius: width * 0.65,
+      opacity: 0.9,
+      speed: 3.5
+    });
+
+    lotusPulseScale = 1.3;
+  }
+
+  function resetGame() {
+    score = 0;
+    if (scoreEl) scoreEl.textContent = '0';
+    droplets = [];
+    ripples = [];
+    sparkles = [];
+    scorePopups = [];
+    spawnDroplet();
+  }
+
+  if (btnStart) {
+    btnStart.addEventListener('click', () => {
+      isRunning = true;
+      if (overlayMsg) overlayMsg.style.opacity = '0';
+      setTimeout(() => { if (overlayMsg) overlayMsg.style.display = 'none'; }, 300);
+      if (btnTrigger) btnTrigger.disabled = false;
+      resetGame();
+      loop();
+    });
+  }
+
+  if (btnTrigger) {
+    btnTrigger.addEventListener('click', triggerRipple);
+  }
+
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      resetGame();
+    });
+  }
+
+  canvas.addEventListener('click', triggerRipple);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && isRunning && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      triggerRipple();
+    }
+  });
+
+  function loop() {
+    if (!isRunning) return;
+
+    ctx.clearRect(0, 0, width, height);
+
+    lotusPos.x = width / 2;
+    lotusPos.y = height - 35;
+
+    // Render Lotus Base
+    ctx.save();
+    ctx.translate(lotusPos.x, lotusPos.y);
+    if (lotusPulseScale > 1.0) lotusPulseScale -= 0.02;
+    ctx.scale(lotusPulseScale, lotusPulseScale);
+
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#f472b6';
+    ctx.fillStyle = '#f472b6';
+    
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.ellipse((i - 2.5) * 8, 0, 8, 16, (i - 2.5) * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.fillStyle = '#fef08a';
+    ctx.shadowColor = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(0, 2, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    if (droplets.length < 1 && Math.random() < 0.03) {
+      spawnDroplet();
+    }
+
+    // Update & Render Droplets
+    for (let i = droplets.length - 1; i >= 0; i--) {
+      const d = droplets[i];
+      d.y += d.speed;
+
+      ctx.save();
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = d.color;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(d.x - d.radius * 0.3, d.y - d.radius * 0.3, d.radius * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      if (d.y > height - 20) {
+        droplets.splice(i, 1);
+        spawnDroplet();
+      }
+    }
+
+    // Update & Render Ripples
+    for (let rIdx = ripples.length - 1; rIdx >= 0; rIdx--) {
+      const r = ripples[rIdx];
+      r.radius += r.speed;
+      r.opacity -= 0.012;
+
+      if (r.opacity <= 0 || r.radius >= r.maxRadius) {
+        ripples.splice(rIdx, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.strokeStyle = `rgba(168, 85, 247, ${r.opacity})`;
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#a855f7';
+      ctx.beginPath();
+      ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Check Collision
+      for (let dIdx = droplets.length - 1; dIdx >= 0; dIdx--) {
+        const d = droplets[dIdx];
+        const dist = Math.hypot(d.x - r.x, d.y - r.y);
+        
+        if (Math.abs(dist - r.radius) < 18) {
+          score += 10;
+          if (scoreEl) scoreEl.textContent = score.toString();
+
+          playZenChimeSound();
+
+          for (let sp = 0; sp < 16; sp++) {
+            sparkles.push({
+              x: d.x,
+              y: d.y,
+              vx: (Math.random() - 0.5) * 5,
+              vy: (Math.random() - 0.5) * 5,
+              opacity: 1.0,
+              size: Math.random() * 3 + 1,
+              color: Math.random() > 0.4 ? '#f59e0b' : '#38bdf8'
+            });
+          }
+
+          scorePopups.push({
+            x: d.x,
+            y: d.y - 10,
+            text: '+10 สมาธิ ✨',
+            opacity: 1.0
+          });
+
+          droplets.splice(dIdx, 1);
+          setTimeout(spawnDroplet, 600);
+        }
+      }
+    }
+
+    // Update & Render Sparkles
+    for (let sIdx = sparkles.length - 1; sIdx >= 0; sIdx--) {
+      const sp = sparkles[sIdx];
+      sp.x += sp.vx;
+      sp.y += sp.vy;
+      sp.opacity -= 0.025;
+
+      if (sp.opacity <= 0) {
+        sparkles.splice(sIdx, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = sp.opacity;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = sp.color;
+      ctx.fillStyle = sp.color;
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Render Score Popups
+    for (let pIdx = scorePopups.length - 1; pIdx >= 0; pIdx--) {
+      const pop = scorePopups[pIdx];
+      pop.y -= 0.8;
+      pop.opacity -= 0.02;
+
+      if (pop.opacity <= 0) {
+        scorePopups.splice(pIdx, 1);
+        continue;
+      }
+
+      ctx.save();
+      ctx.globalAlpha = pop.opacity;
+      ctx.fillStyle = '#fef08a';
+      ctx.font = 'bold 14px Sarabun, sans-serif';
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#fef08a';
+      ctx.fillText(pop.text, pop.x - 20, pop.y);
+      ctx.restore();
+    }
+
+    requestAnimationFrame(loop);
+  }
+}
+
+// --------------------------------------------------------------------------
+// Game 2: Interactive Zen Sand & Stone Garden
+// --------------------------------------------------------------------------
+function initZenGardenGame() {
+  const canvas = document.getElementById('zen-garden-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  let width = canvas.width = canvas.parentElement ? canvas.parentElement.clientWidth : 400;
+  let height = canvas.height = canvas.parentElement ? canvas.parentElement.clientHeight : 340;
+
+  let activeTool = 'wave';
+  let isDrawing = false;
+  let lastX = 0, lastY = 0;
+
+  const btnRake = document.getElementById('btn-rake-sand');
+  const toolBtns = document.querySelectorAll('.zen-item-btn');
+
+  function drawSandBase() {
+    ctx.fillStyle = '#23201d';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    for (let i = 0; i < 350; i++) {
+      const rx = Math.random() * width;
+      const ry = Math.random() * height;
+      ctx.fillRect(rx, ry, 1.5, 1.5);
+    }
+  }
+
+  drawSandBase();
+
+  toolBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      toolBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text-secondary)';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'rgba(255,255,255,0.1)';
+      btn.style.color = '#fff';
+      activeTool = btn.getAttribute('data-item');
+    });
+  });
+
+  if (btnRake) {
+    btnRake.addEventListener('click', () => {
+      drawSandBase();
+    });
+  }
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }
+
+  function startDraw(e) {
+    isDrawing = true;
+    const pos = getPos(e);
+    lastX = pos.x;
+    lastY = pos.y;
+
+    if (activeTool === 'stone') {
+      drawStone(pos.x, pos.y);
+    } else if (activeTool === 'lotus') {
+      drawLotus(pos.x, pos.y);
+    }
+  }
+
+  function moveDraw(e) {
+    if (!isDrawing || activeTool !== 'wave') return;
+    const pos = getPos(e);
+
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+
+    [-6, 0, 6].forEach(offset => {
+      ctx.beginPath();
+      ctx.moveTo(lastX + offset, lastY + offset);
+      ctx.lineTo(pos.x + offset, pos.y + offset);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+
+    lastX = pos.x;
+    lastY = pos.y;
+  }
+
+  function endDraw() {
+    isDrawing = false;
+  }
+
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', moveDraw);
+  window.addEventListener('mouseup', endDraw);
+
+  canvas.addEventListener('touchstart', startDraw, { passive: true });
+  canvas.addEventListener('touchmove', moveDraw, { passive: true });
+  window.addEventListener('touchend', endDraw);
+
+  function drawStone(x, y) {
+    const radius = Math.random() * 8 + 18;
+
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 4;
+
+    const grad = ctx.createRadialGradient(x - radius * 0.3, y - radius * 0.3, radius * 0.1, x, y, radius);
+    grad.addColorStop(0, '#52525b');
+    grad.addColorStop(0.7, '#27272a');
+    grad.addColorStop(1, '#18181b');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(x, y, radius, radius * 0.75, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLotus(x, y) {
+    ctx.save();
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#f472b6';
+    ctx.fillStyle = '#f472b6';
+
+    const petals = 6;
+    for (let i = 0; i < petals; i++) {
+      const angle = (i * Math.PI * 2) / petals;
+      const px = x + Math.cos(angle) * 8;
+      const py = y + Math.sin(angle) * 8;
+      ctx.beginPath();
+      ctx.ellipse(px, py, 6, 12, angle, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 }
