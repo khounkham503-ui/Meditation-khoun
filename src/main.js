@@ -1646,7 +1646,11 @@ async function handleCloudSignIn() {
         }
         return;
       } else if (msg.includes('Email not confirmed')) {
-        msg = 'อีเมลนี้ยังไม่ได้กดกดยืนยันใน Inbox ครับ 📧\n\n💡 วิธีเข้าใช้งานได้ทันที 100%:\nโปรดไปที่ Supabase Dashboard -> Authentication -> Providers -> Email -> ปิด (Uncheck) "Confirm email" ครับ ⚙️';
+        const sendLink = confirm('บัญชีนี้ถูกสร้างขึ้นก่อนที่คุณจะกดปิดระบบยืนยันอีเมลครับ 📧\n\nคุณต้องการให้ระบบส่งลิงก์ล็อกอิน (Magic Link) ไปที่อีเมลนี้เพื่อเข้าสู่ระบบทันทีหรือไม่?');
+        if (sendLink) {
+          handleMagicLinkSignIn();
+        }
+        return;
       }
       alert(`การเข้าสู่ระบบล้มเหลว: ${msg}`);
     } else {
