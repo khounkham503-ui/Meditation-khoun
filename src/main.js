@@ -472,6 +472,11 @@ function setupEventListeners() {
   if (linkForgotPwd) {
     linkForgotPwd.addEventListener('click', handleForgotPassword);
   }
+
+  const btnMagicLink = document.getElementById('btn-magic-link');
+  if (btnMagicLink) {
+    btnMagicLink.addEventListener('click', handleMagicLinkSignIn);
+  }
   
   // Custom Avatar Selector
   avatarEmojiOptions.forEach(opt => {
@@ -1677,6 +1682,49 @@ async function handleForgotPassword(e) {
   } catch (err) {
     console.error('Reset password error', err);
     alert('เกิดข้อผิดพลาดในการส่งลิงก์รีเซ็ตรหัสผ่าน ❌');
+  }
+}
+
+async function handleMagicLinkSignIn() {
+  if (!isConfigured) return;
+  const email = authSigninEmail ? authSigninEmail.value.trim() : '';
+  const targetEmail = email || prompt('กรุณากรอกอีเมลของคุณเพื่อรับลิงก์ล็อกอิน (Magic Link):');
+  if (!targetEmail) return;
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(targetEmail)) {
+    alert('กรุณากรอกอีเมลให้ถูกต้องด้วยนะครับ (เช่น khoun@gmail.com) 📧');
+    return;
+  }
+
+  const btn = document.getElementById('btn-magic-link');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳ กำลังส่งลิงก์ยืนยันทางอีเมล...</span>';
+  }
+
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: targetEmail,
+      options: {
+        emailRedirectTo: window.location.origin + window.location.pathname
+      }
+    });
+
+    if (error) {
+      alert(`การส่งลิงก์ล็อกอินล้มเหลว: ${error.message} ❌`);
+    } else {
+      alert(`📧 ส่งลิงก์เข้าสู่ระบบไปยัง ${targetEmail} เรียบร้อยแล้ว!\n\nกรุณาเปิดอีเมลและกดปุ่มยืนยันเพื่อเข้าสู่ระบบได้ทันทีโดยไม่ต้องใช้รหัสผ่านครับ ✨`);
+      closeProfileModal();
+    }
+  } catch (err) {
+    console.error('Magic Link sign in error', err);
+    alert('เกิดข้อผิดพลาดในการส่งลิงก์เข้าสู่ระบบทางอีเมล ❌');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>✉️ ล็อกอินด้วยลิงก์ยืนยันทางอีเมล (Magic Link)</span>';
+    }
   }
 }
 
