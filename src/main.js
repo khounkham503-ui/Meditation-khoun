@@ -460,6 +460,19 @@ function setupEventListeners() {
     btnDoSignout.addEventListener('click', handleCloudSignOut);
   }
   
+  const btnGuestMode = document.getElementById('btn-guest-mode');
+  if (btnGuestMode) {
+    btnGuestMode.addEventListener('click', () => {
+      closeProfileModal();
+      showToast('🧘 เข้าใช้งานในฐานะผู้ใช้ทั่วไป สถิติจะบันทึกในเครื่องของคุณครับ');
+    });
+  }
+
+  const linkForgotPwd = document.getElementById('link-forgot-pwd');
+  if (linkForgotPwd) {
+    linkForgotPwd.addEventListener('click', handleForgotPassword);
+  }
+  
   // Custom Avatar Selector
   avatarEmojiOptions.forEach(opt => {
     opt.addEventListener('click', () => {
@@ -1561,6 +1574,11 @@ function showProfileModal() {
 
       showAuthView('profile');
     } else {
+      // Pre-fill remembered email if saved
+      const savedEmail = localStorage.getItem('saved_auth_email');
+      if (savedEmail && authSigninEmail) {
+        authSigninEmail.value = savedEmail;
+      }
       showAuthView('signin');
     }
   }
@@ -1582,6 +1600,7 @@ async function handleCloudSignIn() {
   const email = authSigninEmail.value.trim();
   const password = authSigninPassword.value.trim();
   const btn = document.getElementById('btn-do-signin');
+  const rememberMe = document.getElementById('remember-me');
 
   if (!email || !password) {
     alert('กรุณากรอกอีเมลและรหัสผ่านด้วยนะครับ 😊');
@@ -1592,6 +1611,12 @@ async function handleCloudSignIn() {
   if (!emailRegex.test(email)) {
     alert('กรุณากรอกอีเมลให้ถูกต้องด้วยนะครับ (เช่น khoun@gmail.com) 📧');
     return;
+  }
+
+  if (rememberMe && rememberMe.checked) {
+    localStorage.setItem('saved_auth_email', email);
+  } else {
+    localStorage.removeItem('saved_auth_email');
   }
 
   if (btn) {
@@ -1608,9 +1633,15 @@ async function handleCloudSignIn() {
     if (error) {
       let msg = error.message;
       if (msg.includes('Invalid login credentials')) {
-        msg = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้งครับ ❌';
+        const createNow = confirm('ไม่พบข้อมูลบัญชีหรือรหัสผ่านไม่ถูกต้องในระบบ 🔑\n\nคุณต้องการสลับไปหน้าสมัครสมาชิกใหม่ด้วยอีเมลนี้ทันทีหรือไม่?');
+        if (createNow) {
+          if (authSignupEmail) authSignupEmail.value = email;
+          if (authSignupPassword) authSignupPassword.value = password;
+          showAuthView('signup');
+        }
+        return;
       } else if (msg.includes('Email not confirmed')) {
-        msg = 'อีเมลนี้ยังไม่ได้กดกดยืนยันใน Inbox กรุณาเปิดอีเมลและกดยืนยันตัวตนก่อนเข้าสู่ระบบนะครับ 📧';
+        msg = 'อีเมลนี้ยังไม่ได้กดกดยืนยันใน Inbox ครับ 📧\n\n💡 วิธีเข้าใช้งานได้ทันที 100%:\nโปรดไปที่ Supabase Dashboard -> Authentication -> Providers -> Email -> ปิด (Uncheck) "Confirm email" ครับ ⚙️';
       }
       alert(`การเข้าสู่ระบบล้มเหลว: ${msg}`);
     } else {
@@ -1625,6 +1656,27 @@ async function handleCloudSignIn() {
       btn.disabled = false;
       btn.innerHTML = '<span>🔑 ลงชื่อเข้าใช้งาน</span>';
     }
+  }
+}
+
+async function handleForgotPassword(e) {
+  if (e) e.preventDefault();
+  const email = authSigninEmail ? authSigninEmail.value.trim() : '';
+  const targetEmail = email || prompt('กรุณากรอกอีเมลของคุณเพื่อขอรับลิงก์ตั้งรหัสผ่านใหม่:');
+  if (!targetEmail) return;
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
+      redirectTo: window.location.href
+    });
+    if (error) {
+      alert(`ไม่สามารถส่งลิงก์รีเซ็ตรหัสผ่านได้: ${error.message} ❌`);
+    } else {
+      alert(`📧 ระบบได้ส่งลิงก์รีเซ็ตรหัสผ่านไปยัง ${targetEmail} เรียบร้อยแล้วครับ กรุณาเช็กในกล่องจดหมายของคุณ`);
+    }
+  } catch (err) {
+    console.error('Reset password error', err);
+    alert('เกิดข้อผิดพลาดในการส่งลิงก์รีเซ็ตรหัสผ่าน ❌');
   }
 }
 
